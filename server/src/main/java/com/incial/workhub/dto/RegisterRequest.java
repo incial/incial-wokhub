@@ -1,7 +1,6 @@
 package com.incial.workhub.dto;
 
 import com.incial.workhub.enums.USER_ROLE;
-import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
