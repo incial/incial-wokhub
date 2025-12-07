@@ -2,7 +2,7 @@
 import React from 'react';
 import { Company } from '../../types';
 import { getCompanyStatusStyles, getWorkTypeStyles } from '../../utils';
-import { Trash2, MoreHorizontal, Hash, User, Eye } from 'lucide-react';
+import { Trash2, MoreHorizontal, Hash, User, Eye, HardDrive, Globe, Linkedin, Instagram, Facebook, Twitter, Link as LinkIcon } from 'lucide-react';
 
 interface CompaniesTableProps {
   data: Company[];
@@ -65,14 +65,54 @@ export const CompaniesTable: React.FC<CompaniesTableProps> = ({ data, isLoading,
                  </span>
               </td>
 
-              {/* Company Name */}
+              {/* Company Name & Links */}
               <td className="px-6 py-4">
-                <button 
-                    onClick={() => onView(row)}
-                    className="font-bold text-gray-900 text-sm hover:text-brand-600 hover:underline transition-colors text-left"
-                >
-                    {row.name}
-                </button>
+                <div className="flex flex-col gap-1.5">
+                    <button 
+                        onClick={() => onView(row)}
+                        className="font-bold text-gray-900 text-sm hover:text-brand-600 hover:underline transition-colors text-left"
+                    >
+                        {row.name}
+                    </button>
+                    {/* Quick Links Row */}
+                    <div className="flex items-center gap-2">
+                        {row.driveLink && (
+                             <a href={row.driveLink} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-600 transition-colors" title="Google Drive">
+                                <HardDrive className="h-3.5 w-3.5" />
+                             </a>
+                        )}
+                        {row.socials?.website && (
+                             <a href={row.socials.website} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-brand-600 transition-colors" title="Website">
+                                <Globe className="h-3.5 w-3.5" />
+                             </a>
+                        )}
+                        {row.socials?.linkedin && (
+                             <a href={row.socials.linkedin} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-700 transition-colors" title="LinkedIn">
+                                <Linkedin className="h-3.5 w-3.5" />
+                             </a>
+                        )}
+                         {row.socials?.instagram && (
+                             <a href={row.socials.instagram} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-pink-600 transition-colors" title="Instagram">
+                                <Instagram className="h-3.5 w-3.5" />
+                             </a>
+                        )}
+                         {row.socials?.facebook && (
+                             <a href={row.socials.facebook} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-600 transition-colors" title="Facebook">
+                                <Facebook className="h-3.5 w-3.5" />
+                             </a>
+                        )}
+                        {row.socials?.twitter && (
+                             <a href={row.socials.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-sky-500 transition-colors" title="Twitter">
+                                <Twitter className="h-3.5 w-3.5" />
+                             </a>
+                        )}
+                         {row.socials?.other && (
+                             <a href={row.socials.other} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-800 transition-colors" title="Other">
+                                <LinkIcon className="h-3.5 w-3.5" />
+                             </a>
+                        )}
+                    </div>
+                </div>
               </td>
 
               {/* Contact Person */}

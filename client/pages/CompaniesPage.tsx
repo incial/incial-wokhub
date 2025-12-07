@@ -5,18 +5,27 @@ import { Sidebar } from '../components/layout/Sidebar';
 import { CompaniesTable } from '../components/companies/CompaniesTable';
 import { CompaniesFilters } from '../components/companies/CompaniesFilters';
 import { CompanyDetailsModal } from '../components/companies/CompanyDetailsModal';
+import { CompaniesForm } from '../components/companies/CompaniesForm';
+import { DeleteConfirmationModal } from '../components/ui/DeleteConfirmationModal';
 import { Company, CompanyFilterState, CRMEntry } from '../types';
 import { Briefcase, Building, Archive, ArrowRight, CheckCircle } from 'lucide-react';
 import { crmApi } from '../services/api';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export const CompaniesPage: React.FC = () => {
+  const { user } = useAuth();
   const [crmEntries, setCrmEntries] = useState<CRMEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'active' | 'dropped' | 'past'>('active');
   const [viewingCompany, setViewingCompany] = useState<Company | undefined>(undefined);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCompany, setEditingCompany] = useState<Company | undefined>(undefined);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   
+  // Delete State
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
   const [filters, setFilters] = useState<CompanyFilterState>({
     search: '',
     status: '',
@@ -54,7 +63,8 @@ export const CompaniesPage: React.FC = () => {
           updatedAt: entry.lastUpdatedAt || new Date().toISOString(),
           lastUpdatedBy: entry.lastUpdatedBy,
           lastUpdatedAt: entry.lastUpdatedAt,
-          driveLink: entry.driveLink // Map Drive Link
+          driveLink: entry.driveLink, // Map Drive Link
+          socials: entry.socials // Map Social Links
           // Use properties from CRM that map to Company interface
       } as Company));
   }, [crmEntries]);
@@ -90,22 +100,63 @@ export const CompaniesPage: React.FC = () => {
   }, [categorizedData, activeTab, filters]);
 
   const handleEdit = (company: Company) => {
-      console.log("Edit requested for", company.name); 
+      setEditingCompany(company);
+      setIsEditModalOpen(true);
+  };
+
+  const handleUpdateCompany = async (updatedComp: Partial<Company>) => {
+      // Find corresponding CRM Entry to update
+      // Since this is a CRM-first system, editing a company updates the underlying deal/contact
+      const crmIndex = crmEntries.findIndex(c => c.id === updatedComp.id);
+      
+      if (crmIndex !== -1) {
+          const oldEntry = crmEntries[crmIndex];
+          const newEntry: CRMEntry = {
+              ...oldEntry,
+              company: updatedComp.name || oldEntry.company,
+              // Map Company Status back to CRM Status where possible, or keep old if incompatible
+              // For now, we assume if user changes status in Company view, it might need manual mapping
+              // We will just update fields that are 1:1 safe
+              driveLink: updatedComp.driveLink,
+              socials: updatedComp.socials,
+              work: updatedComp.work || oldEntry.work,
+              lastUpdatedBy: user?.name || 'Unknown',
+              lastUpdatedAt: new Date().toISOString()
+          };
+
+          // Optimistic Update
+          const newEntries = [...crmEntries];
+          newEntries[crmIndex] = newEntry;
+          setCrmEntries(newEntries);
+          
+          await crmApi.update(newEntry.id, newEntry);
+          // Sync simulated storage for demo persistence
+          localStorage.setItem('mock_crm_data', JSON.stringify(newEntries));
+      }
+      setIsEditModalOpen(false);
   };
 
   const handleView = (company: Company) => {
       setViewingCompany(company);
-      setIsModalOpen(true);
+      setIsViewModalOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
-      if(!window.confirm("This will remove the company and the associated deal from CRM. Continue?")) return;
+  const handleRequestDelete = (id: number) => {
+      setDeleteId(id);
+  };
+
+  const confirmDelete = async () => {
+      if(!deleteId) return;
+      const id = deleteId;
       
       // Optimistic Update
-      setCrmEntries(prev => prev.filter(e => e.id !== id));
-      
+      const newEntries = crmEntries.filter(e => e.id !== id);
+      setCrmEntries(newEntries);
+      setDeleteId(null);
+
       try {
           await crmApi.delete(id);
+          localStorage.setItem('mock_crm_data', JSON.stringify(newEntries));
       } catch (err) {
           alert("Failed to delete");
           fetchData(); // Revert
@@ -120,6 +171,13 @@ export const CompaniesPage: React.FC = () => {
           default: return 'records';
       }
   }
+
+  // Helper to get name for delete modal
+  const itemToDeleteName = useMemo(() => {
+      if (!deleteId) return '';
+      const item = transformedData.find(e => e.id === deleteId);
+      return item ? item.name : '';
+  }, [deleteId, transformedData]);
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC]">
@@ -205,7 +263,7 @@ export const CompaniesPage: React.FC = () => {
                     isLoading={isLoading} 
                     onEdit={handleEdit}
                     onView={handleView}
-                    onDelete={handleDelete}
+                    onDelete={handleRequestDelete}
                 />
             </div>
             
@@ -219,9 +277,25 @@ export const CompaniesPage: React.FC = () => {
         </main>
 
         <CompanyDetailsModal 
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
+            isOpen={isViewModalOpen}
+            onClose={() => setIsViewModalOpen(false)}
             company={viewingCompany}
+        />
+        
+        <CompaniesForm
+            isOpen={isEditModalOpen}
+            onClose={() => setIsEditModalOpen(false)}
+            onSubmit={handleUpdateCompany}
+            initialData={editingCompany}
+        />
+
+        <DeleteConfirmationModal 
+            isOpen={!!deleteId}
+            onClose={() => setDeleteId(null)}
+            onConfirm={confirmDelete}
+            title="Remove Company"
+            message="Are you sure you want to remove this company? This will also remove the associated deal from the CRM."
+            itemName={itemToDeleteName}
         />
       </div>
     </div>

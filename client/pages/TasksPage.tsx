@@ -9,6 +9,7 @@ import { TasksKanban } from '../components/tasks/TasksKanban';
 import { TasksCalendar } from '../components/tasks/TasksCalendar';
 import { TasksFilter } from '../components/tasks/TasksFilter';
 import { TaskForm } from '../components/tasks/TaskForm';
+import { DeleteConfirmationModal } from '../components/ui/DeleteConfirmationModal';
 import { CheckSquare, Plus, LayoutList, Kanban, Calendar as CalendarIcon, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -21,6 +22,9 @@ export const TasksPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Delete State
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const [filters, setFilters] = useState<TaskFilterState>({
     search: '',
@@ -75,24 +79,37 @@ export const TasksPage: React.FC = () => {
       setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
-      if (!window.confirm("Are you sure you want to delete this task?")) return;
+  const handleRequestDelete = (id: number) => {
+      setDeleteId(id);
+  };
+
+  const confirmDelete = async () => {
+      if (!deleteId) return;
+      const id = deleteId;
       
       const newTasks = tasks.filter(t => t.id !== id);
       setTasks(newTasks);
+      setDeleteId(null);
+      
       await tasksApi.delete(id);
       localStorage.setItem('mock_tasks_data', JSON.stringify(newTasks));
   };
 
   const handleSave = async (data: Partial<Task>) => {
+      const auditData = {
+          lastUpdatedBy: user?.name || 'Unknown',
+          lastUpdatedAt: new Date().toISOString()
+      };
+      const finalData = { ...data, ...auditData };
+
       if (editingTask) {
-          const updated = { ...editingTask, ...data } as Task;
+          const updated = { ...editingTask, ...finalData } as Task;
           const newTasks = tasks.map(t => t.id === updated.id ? updated : t);
           setTasks(newTasks);
-          await tasksApi.update(updated.id, data);
+          await tasksApi.update(updated.id, finalData);
           localStorage.setItem('mock_tasks_data', JSON.stringify(newTasks));
       } else {
-          const newTask = await tasksApi.create(data as Task);
+          const newTask = await tasksApi.create(finalData as Task);
           const newTasks = [newTask, ...tasks];
           setTasks(newTasks);
           localStorage.setItem('mock_tasks_data', JSON.stringify(newTasks));
@@ -100,18 +117,43 @@ export const TasksPage: React.FC = () => {
   };
 
   const handleStatusChange = async (task: Task, newStatus: TaskStatus) => {
-      const updated = { ...task, status: newStatus };
+      const updated = { 
+          ...task, 
+          status: newStatus,
+          lastUpdatedBy: user?.name || 'Unknown',
+          lastUpdatedAt: new Date().toISOString()
+      };
       setTasks(prev => prev.map(t => t.id === task.id ? updated : t));
-      await tasksApi.update(task.id, { status: newStatus });
+      await tasksApi.update(task.id, { 
+          status: newStatus,
+          lastUpdatedBy: user?.name || 'Unknown',
+          lastUpdatedAt: new Date().toISOString()
+      });
       localStorage.setItem('mock_tasks_data', JSON.stringify(tasks.map(t => t.id === task.id ? updated : t)));
   };
 
   const handlePriorityChange = async (task: Task, newPriority: TaskPriority) => {
-      const updated = { ...task, priority: newPriority };
+      const updated = { 
+          ...task, 
+          priority: newPriority,
+          lastUpdatedBy: user?.name || 'Unknown',
+          lastUpdatedAt: new Date().toISOString()
+      };
       setTasks(prev => prev.map(t => t.id === task.id ? updated : t));
-      await tasksApi.update(task.id, { priority: newPriority });
+      await tasksApi.update(task.id, { 
+          priority: newPriority,
+          lastUpdatedBy: user?.name || 'Unknown',
+          lastUpdatedAt: new Date().toISOString()
+      });
       localStorage.setItem('mock_tasks_data', JSON.stringify(tasks.map(t => t.id === task.id ? updated : t)));
   };
+
+  // Helper to get name for delete modal
+  const itemToDeleteName = useMemo(() => {
+      if (!deleteId) return '';
+      const item = tasks.find(t => t.id === deleteId);
+      return item ? item.title : '';
+  }, [deleteId, tasks]);
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC]">
@@ -180,7 +222,7 @@ export const TasksPage: React.FC = () => {
                             <TasksTable 
                                 data={filteredTasks} 
                                 onEdit={handleEdit} 
-                                onDelete={handleDelete}
+                                onDelete={handleRequestDelete}
                                 onStatusChange={handleStatusChange}
                                 onPriorityChange={handlePriorityChange}
                             />
@@ -215,6 +257,14 @@ export const TasksPage: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleSave}
         initialData={editingTask}
+      />
+
+      <DeleteConfirmationModal 
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={confirmDelete}
+        title="Delete Task"
+        itemName={itemToDeleteName}
       />
     </div>
   );

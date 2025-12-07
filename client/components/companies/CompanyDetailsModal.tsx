@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { X, Hash, User, Calendar, Tag, Clock, ExternalLink, HardDrive } from 'lucide-react';
+import { X, Hash, User, Calendar, Tag, Clock, ExternalLink, HardDrive, Linkedin, Instagram, Facebook, Twitter, Globe, Link as LinkIcon } from 'lucide-react';
 import { Company } from '../../types';
 import { getCompanyStatusStyles, getWorkTypeStyles, formatDate } from '../../utils';
 
@@ -12,6 +12,8 @@ interface CompanyDetailsModalProps {
 
 export const CompanyDetailsModal: React.FC<CompanyDetailsModalProps> = ({ isOpen, onClose, company }) => {
   if (!isOpen || !company) return null;
+
+  const hasSocials = company.socials && Object.values(company.socials).some(Boolean);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
@@ -52,6 +54,47 @@ export const CompanyDetailsModal: React.FC<CompanyDetailsModalProps> = ({ isOpen
                     {company.contactPerson || <span className="text-gray-400 italic text-sm">No contact person listed</span>}
                 </p>
             </div>
+
+            {/* Socials / Online Presence */}
+            {hasSocials && (
+                <div>
+                     <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-2">
+                        <Globe className="h-4 w-4" /> Online Presence
+                    </h3>
+                    <div className="flex flex-wrap gap-3">
+                        {company.socials?.website && (
+                             <a href={company.socials.website} target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-brand-600 rounded-lg border border-gray-100 transition-colors" title="Website">
+                                <Globe className="h-5 w-5" />
+                             </a>
+                        )}
+                        {company.socials?.linkedin && (
+                             <a href={company.socials.linkedin} target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-50 hover:bg-blue-50 text-gray-600 hover:text-blue-700 rounded-lg border border-gray-100 transition-colors" title="LinkedIn">
+                                <Linkedin className="h-5 w-5" />
+                             </a>
+                        )}
+                        {company.socials?.instagram && (
+                             <a href={company.socials.instagram} target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-50 hover:bg-pink-50 text-gray-600 hover:text-pink-600 rounded-lg border border-gray-100 transition-colors" title="Instagram">
+                                <Instagram className="h-5 w-5" />
+                             </a>
+                        )}
+                        {company.socials?.facebook && (
+                             <a href={company.socials.facebook} target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-50 hover:bg-blue-50 text-gray-600 hover:text-blue-600 rounded-lg border border-gray-100 transition-colors" title="Facebook">
+                                <Facebook className="h-5 w-5" />
+                             </a>
+                        )}
+                        {company.socials?.twitter && (
+                             <a href={company.socials.twitter} target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-50 hover:bg-blue-50 text-gray-600 hover:text-sky-500 rounded-lg border border-gray-100 transition-colors" title="Twitter">
+                                <Twitter className="h-5 w-5" />
+                             </a>
+                        )}
+                         {company.socials?.other && (
+                             <a href={company.socials.other} target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-900 rounded-lg border border-gray-100 transition-colors" title="Other Link">
+                                <LinkIcon className="h-5 w-5" />
+                             </a>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Work Scope */}
             <div>

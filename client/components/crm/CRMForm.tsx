@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Save, Edit2, User, Phone, Mail, Calendar, Briefcase, FileText, Tag, DollarSign, CheckCircle, Clock, AlertCircle, History, ExternalLink, HardDrive } from 'lucide-react';
-import { CRMEntry } from '../../types';
+import { X, Save, Edit2, User, Phone, Mail, Calendar, Briefcase, FileText, Tag, DollarSign, CheckCircle, Clock, AlertCircle, History, ExternalLink, HardDrive, Linkedin, Instagram, Facebook, Twitter, Globe, Link as LinkIcon } from 'lucide-react';
+import { CRMEntry, SocialLinks } from '../../types';
 import { getStatusStyles, formatDate, getFollowUpColor, formatMoney } from '../../utils';
 import { CustomDatePicker } from '../ui/CustomDatePicker';
 
@@ -74,6 +74,7 @@ export const CRMForm: React.FC<CRMFormProps> = ({ isOpen, onClose, onSubmit, ini
                 work: [],
                 leadSources: [],
                 driveLink: '',
+                socials: {},
                 lastContact: new Date().toISOString().split('T')[0],
                 nextFollowUp: new Date().toISOString().split('T')[0],
                 notes: '',
@@ -112,6 +113,16 @@ export const CRMForm: React.FC<CRMFormProps> = ({ isOpen, onClose, onSubmit, ini
       } else {
           setFormData(prev => ({ ...prev, work: [...cleanWork, workLabel] }));
       }
+  };
+
+  const updateSocials = (key: keyof SocialLinks, value: string) => {
+      setFormData(prev => ({
+          ...prev,
+          socials: {
+              ...prev.socials,
+              [key]: value
+          }
+      }));
   };
 
   const toggleEdit = () => {
@@ -176,46 +187,95 @@ export const CRMForm: React.FC<CRMFormProps> = ({ isOpen, onClose, onSubmit, ini
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Left Col: Contact Info */}
-            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 flex items-center gap-2">
-                    <User className="h-4 w-4 text-brand-500" /> Contact Details
-                </h3>
-                <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center">
-                            <Phone className="h-4 w-4 text-gray-500" />
+            {/* Left Col: Contact Info & Socials */}
+            <div className="space-y-6">
+                <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 flex items-center gap-2">
+                        <User className="h-4 w-4 text-brand-500" /> Contact Details
+                    </h3>
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center">
+                                <Phone className="h-4 w-4 text-gray-500" />
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500">Phone</p>
+                                <a href={`tel:${formData.phone}`} className="text-sm font-medium text-brand-600 hover:underline">
+                                    {formData.phone || 'N/A'}
+                                </a>
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-xs text-gray-500">Phone</p>
-                            <a href={`tel:${formData.phone}`} className="text-sm font-medium text-brand-600 hover:underline">
-                                {formData.phone || 'N/A'}
-                            </a>
+                        <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center">
+                                <Mail className="h-4 w-4 text-gray-500" />
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500">Email</p>
+                                <a href={`mailto:${formData.email}`} className="text-sm font-medium text-brand-600 hover:underline">
+                                    {formData.email || 'N/A'}
+                                </a>
+                            </div>
                         </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center">
-                            <Mail className="h-4 w-4 text-gray-500" />
-                        </div>
-                        <div>
-                            <p className="text-xs text-gray-500">Email</p>
-                            <a href={`mailto:${formData.email}`} className="text-sm font-medium text-brand-600 hover:underline">
-                                {formData.email || 'N/A'}
-                            </a>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center">
-                            <Briefcase className="h-4 w-4 text-gray-500" />
-                        </div>
-                        <div>
-                            <p className="text-xs text-gray-500">Lead Source</p>
-                            <p className="text-sm font-medium text-gray-900">
-                                {formData.leadSources?.[0] || 'Unknown'}
-                            </p>
+                        <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center">
+                                <Briefcase className="h-4 w-4 text-gray-500" />
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500">Lead Source</p>
+                                <p className="text-sm font-medium text-gray-900">
+                                    {formData.leadSources?.[0] || 'Unknown'}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                {/* Socials View */}
+                {(formData.socials && Object.values(formData.socials).some(Boolean)) && (
+                    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+                        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 flex items-center gap-2">
+                            <Globe className="h-4 w-4 text-brand-500" /> Online Presence
+                        </h3>
+                        <div className="grid grid-cols-2 gap-3">
+                            {formData.socials.website && (
+                                <a href={formData.socials.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 text-gray-600 hover:text-brand-600 transition-colors">
+                                    <Globe className="h-4 w-4" />
+                                    <span className="text-sm font-medium">Website</span>
+                                </a>
+                            )}
+                            {formData.socials.linkedin && (
+                                <a href={formData.socials.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 text-gray-600 hover:text-blue-700 transition-colors">
+                                    <Linkedin className="h-4 w-4" />
+                                    <span className="text-sm font-medium">LinkedIn</span>
+                                </a>
+                            )}
+                            {formData.socials.instagram && (
+                                <a href={formData.socials.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 text-gray-600 hover:text-pink-600 transition-colors">
+                                    <Instagram className="h-4 w-4" />
+                                    <span className="text-sm font-medium">Instagram</span>
+                                </a>
+                            )}
+                            {formData.socials.facebook && (
+                                <a href={formData.socials.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 text-gray-600 hover:text-blue-600 transition-colors">
+                                    <Facebook className="h-4 w-4" />
+                                    <span className="text-sm font-medium">Facebook</span>
+                                </a>
+                            )}
+                            {formData.socials.twitter && (
+                                <a href={formData.socials.twitter} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 text-gray-600 hover:text-sky-500 transition-colors">
+                                    <Twitter className="h-4 w-4" />
+                                    <span className="text-sm font-medium">Twitter</span>
+                                </a>
+                            )}
+                             {formData.socials.other && (
+                                <a href={formData.socials.other} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 text-gray-600 hover:text-gray-900 transition-colors col-span-2">
+                                    <LinkIcon className="h-4 w-4" />
+                                    <span className="text-sm font-medium truncate">{formData.socials.other}</span>
+                                </a>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Right Col: Scope & Tags */}
@@ -332,6 +392,73 @@ export const CRMForm: React.FC<CRMFormProps> = ({ isOpen, onClose, onSubmit, ini
                         <label className="block mb-1.5 text-sm font-medium text-gray-700">Phone</label>
                         <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-500 focus:outline-none" 
                         value={formData.phone || ''} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                    </div>
+               </div>
+
+               {/* Social Media Inputs */}
+               <div className="pt-4 border-t border-gray-50">
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Online Presence</h4>
+                    <div className="space-y-3">
+                        <div className="relative">
+                            <Globe className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                            <input 
+                                type="url" 
+                                placeholder="Website URL"
+                                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                                value={formData.socials?.website || ''}
+                                onChange={e => updateSocials('website', e.target.value)}
+                            />
+                        </div>
+                        <div className="relative">
+                            <Linkedin className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                            <input 
+                                type="url" 
+                                placeholder="LinkedIn URL"
+                                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                                value={formData.socials?.linkedin || ''}
+                                onChange={e => updateSocials('linkedin', e.target.value)}
+                            />
+                        </div>
+                        <div className="relative">
+                            <Instagram className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                            <input 
+                                type="url" 
+                                placeholder="Instagram URL"
+                                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                                value={formData.socials?.instagram || ''}
+                                onChange={e => updateSocials('instagram', e.target.value)}
+                            />
+                        </div>
+                        <div className="relative">
+                            <Facebook className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                            <input 
+                                type="url" 
+                                placeholder="Facebook URL"
+                                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                                value={formData.socials?.facebook || ''}
+                                onChange={e => updateSocials('facebook', e.target.value)}
+                            />
+                        </div>
+                        <div className="relative">
+                            <Twitter className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                            <input 
+                                type="url" 
+                                placeholder="Twitter (X) URL"
+                                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                                value={formData.socials?.twitter || ''}
+                                onChange={e => updateSocials('twitter', e.target.value)}
+                            />
+                        </div>
+                         <div className="relative">
+                            <LinkIcon className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                            <input 
+                                type="url" 
+                                placeholder="Other Link"
+                                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                                value={formData.socials?.other || ''}
+                                onChange={e => updateSocials('other', e.target.value)}
+                            />
+                        </div>
                     </div>
                </div>
             </div>

@@ -16,6 +16,15 @@ export interface AuthResponse {
   message: string;
 }
 
+export interface SocialLinks {
+  linkedin?: string;
+  instagram?: string;
+  facebook?: string;
+  website?: string;
+  twitter?: string;
+  other?: string;
+}
+
 export interface CRMEntry {
   id: number;
   company: string;
@@ -31,7 +40,8 @@ export interface CRMEntry {
   tags: string[];
   work: string[];
   leadSources: string[];
-  driveLink?: string; // New field
+  driveLink?: string; 
+  socials?: SocialLinks; // New field
   lastUpdatedBy?: string;
   lastUpdatedAt?: string;
 }
@@ -59,7 +69,8 @@ export interface Company {
   updatedAt: string;
   lastUpdatedBy?: string;
   lastUpdatedAt?: string;
-  driveLink?: string; // New field
+  driveLink?: string;
+  socials?: SocialLinks; // New field
   isCrmDerived?: boolean; 
 }
 
