@@ -340,6 +340,7 @@ export const CRMForm: React.FC<CRMFormProps> = ({ isOpen, onClose, onSubmit, ini
                             <option value="on progress">On Progress</option>
                             <option value="Quote Sent">Quote Sent</option>
                             <option value="onboarded">Onboarded</option>
+                            <option value="completed">Completed</option>
                             <option value="drop">Drop</option>
                         </select>
                     </div>

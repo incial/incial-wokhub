@@ -1,43 +1,83 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Save, Building, Hash, Check } from 'lucide-react';
-import { Company, CompanyStatus } from '../../types';
-import { getWorkTypeStyles } from '../../utils';
+import { X, Save, Edit2, User, Phone, Mail, Calendar, Briefcase, FileText, Tag, DollarSign, CheckCircle, Clock, AlertCircle, History } from 'lucide-react';
+import { CRMEntry } from '../../types';
+import { getStatusStyles, formatDate, getFollowUpColor, formatMoney } from '../../utils';
+import { CustomDatePicker } from '../ui/CustomDatePicker';
 
-interface CompaniesFormProps {
+interface CRMFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: Partial<Company>) => void;
-  initialData?: Company;
+  onSubmit: (data: Partial<CRMEntry>) => void;
+  initialData?: CRMEntry;
 }
 
-const WORK_TYPES = [
-  "Marketing", "Website", "Poster", "Video", "VFX", 
-  "LinkedIn", "Other", "Ads", "Branding", "UI/UX"
+const LEAD_SOURCES = [
+  'Google Business',
+  'Direct Call',
+  'Website',
+  'Referral',
+  'Social Media',
+  'Email Campaign',
+  'Cold Call',
+  'Event',
+  'Partner',
+  'Direct Mail'
 ];
 
-const STATUS_OPTIONS: { label: string; value: CompanyStatus }[] = [
-    { label: "Running", value: "running" },
-    { label: "Not Started", value: "not_started" },
-    { label: "Completed", value: "completed" },
-    { label: "Discontinued", value: "discontinued" },
+const TAG_OPTIONS = [
+  { label: 'Lead', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+  { label: 'Customer', color: 'bg-green-100 text-green-700 border-green-200' },
+  { label: 'VIP', color: 'bg-purple-100 text-purple-700 border-purple-200' },
+  { label: 'Follow-up', color: 'bg-orange-100 text-orange-700 border-orange-200' },
+  { label: 'Cold', color: 'bg-gray-100 text-gray-700 border-gray-200' },
+  { label: 'Hot', color: 'bg-red-100 text-red-700 border-red-200' },
+  { label: 'Inactive', color: 'bg-stone-100 text-stone-700 border-stone-200' },
+  { label: 'Partner', color: 'bg-pink-100 text-pink-700 border-pink-200' },
 ];
 
-export const CompaniesForm: React.FC<CompaniesFormProps> = ({ isOpen, onClose, onSubmit, initialData }) => {
-  const [formData, setFormData] = useState<Partial<Company>>({});
-  
+const WORK_OPTIONS = [
+  { label: 'branding', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+  { label: 'poster', color: 'bg-amber-100 text-amber-800 border-amber-200' },
+  { label: 'video', color: 'bg-pink-100 text-pink-700 border-pink-200' },
+  { label: 'design', color: 'bg-purple-100 text-purple-700 border-purple-200' },
+  { label: 'ui ux', color: 'bg-sky-100 text-sky-700 border-sky-200' },
+  { label: 'shopify', color: 'bg-orange-100 text-orange-800 border-orange-200' },
+  { label: 'website', color: 'bg-red-100 text-red-700 border-red-200' },
+  { label: 'marketing', color: 'bg-gray-700 text-white border-gray-600' },
+  { label: 'Logo design', color: 'bg-gray-200 text-gray-800 border-gray-300' },
+  { label: 'software', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
+  { label: 'consulting', color: 'bg-teal-100 text-teal-700 border-teal-200' },
+  { label: 'development', color: 'bg-cyan-100 text-cyan-700 border-cyan-200' }
+];
+
+export const CRMForm: React.FC<CRMFormProps> = ({ isOpen, onClose, onSubmit, initialData }) => {
+  const [formData, setFormData] = useState<Partial<CRMEntry>>({});
+  const [mode, setMode] = useState<'view' | 'edit'>('edit');
+
   useEffect(() => {
     if (isOpen) {
         if (initialData) {
             setFormData(initialData);
+            setMode('view');
         } else {
             // Reset for Create Mode
             setFormData({
-                name: '',
-                referenceId: `REF-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`,
+                company: '',
+                contactName: '',
+                email: '',
+                phone: '',
+                status: 'lead',
+                assignedTo: 'Vallapata',
+                dealValue: 0,
+                tags: [],
                 work: [],
-                status: 'not_started',
+                leadSources: [],
+                lastContact: new Date().toISOString().split('T')[0],
+                nextFollowUp: new Date().toISOString().split('T')[0],
+                notes: '',
             });
+            setMode('edit');
         }
     }
   }, [initialData, isOpen]);
@@ -46,132 +86,414 @@ export const CompaniesForm: React.FC<CompaniesFormProps> = ({ isOpen, onClose, o
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.status) {
-        alert("Please fill in required fields");
-        return;
-    }
     onSubmit(formData);
     onClose();
   };
 
-  const toggleWork = (type: string) => {
-      const current = formData.work || [];
-      if (current.includes(type)) {
-          setFormData(prev => ({ ...prev, work: current.filter(t => t !== type) }));
+  const toggleTag = (tag: string) => {
+      const currentTags = formData.tags || [];
+      if (currentTags.includes(tag)) {
+          setFormData(prev => ({ ...prev, tags: currentTags.filter(t => t !== tag) }));
       } else {
-          setFormData(prev => ({ ...prev, work: [...current, type] }));
+          setFormData(prev => ({ ...prev, tags: [...currentTags, tag] }));
       }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-all">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-white z-10">
-          <h2 className="text-xl font-bold text-gray-800">
-            {initialData ? 'Edit Company' : 'Add New Company'}
-          </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-full transition-colors">
-              <X className="h-5 w-5" />
-          </button>
+  const toggleWork = (workLabel: string) => {
+      const currentWork = formData.work || [];
+      // Clean up legacy objects if present during edit toggling
+      const cleanWork = currentWork.map((w: any) => typeof w === 'object' ? w.name : w);
+      
+      const exists = cleanWork.includes(workLabel);
+      
+      if (exists) {
+          setFormData(prev => ({ ...prev, work: cleanWork.filter(w => w !== workLabel) }));
+      } else {
+          setFormData(prev => ({ ...prev, work: [...cleanWork, workLabel] }));
+      }
+  };
+
+  const toggleEdit = () => {
+    setMode('edit');
+  };
+
+  const handleCancel = () => {
+    if (initialData && mode === 'edit') {
+        setFormData(initialData);
+        setMode('view');
+    } else {
+        onClose();
+    }
+  };
+
+  const isView = mode === 'view';
+
+  // --- PREMIUM VIEW RENDERER ---
+  const renderView = () => (
+    <div className="space-y-6">
+        {/* Header Hero */}
+        <div className="bg-gray-50 rounded-xl p-5 border border-gray-200">
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                <div>
+                    <h2 className="text-2xl font-bold text-gray-900">{formData.company}</h2>
+                    <div className="flex items-center gap-2 mt-1 text-gray-600">
+                        <User className="h-4 w-4 text-gray-400" />
+                        <span className="font-medium">{formData.contactName}</span>
+                    </div>
+                </div>
+                <div className={`px-4 py-1.5 rounded-full text-sm font-semibold border shadow-sm ${getStatusStyles(formData.status || '')}`}>
+                    {formData.status}
+                </div>
+            </div>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-gray-200">
+                <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Deal Value</p>
+                    <p className="text-xl font-bold text-gray-900">{formatMoney(formData.dealValue || 0)}</p>
+                </div>
+                <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Assigned To</p>
+                    <div className="flex items-center gap-2">
+                        <div className="h-6 w-6 rounded-full bg-brand-100 flex items-center justify-center text-xs font-bold text-brand-700">
+                            {formData.assignedTo?.[0]}
+                        </div>
+                        <span className="font-medium text-gray-900">{formData.assignedTo}</span>
+                    </div>
+                </div>
+                <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Next Follow Up</p>
+                    <div className={`flex items-center gap-1.5 font-semibold ${getFollowUpColor(formData.nextFollowUp || '')}`}>
+                        <Calendar className="h-4 w-4" />
+                        {formatDate(formData.nextFollowUp || '')}
+                    </div>
+                </div>
+                <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Last Contact</p>
+                    <p className="text-gray-700 font-medium">{formatDate(formData.lastContact || '')}</p>
+                </div>
+            </div>
         </div>
 
-        {/* Modal Content */}
-        <div className="overflow-y-auto p-6 flex-1 bg-white">
-            <form onSubmit={handleSubmit} className="space-y-6">
-                
-                {/* Reference ID & Name */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="w-full">
-                        <label className="block mb-1.5 text-sm font-medium text-gray-700">Reference ID</label>
-                        <div className="relative">
-                            <Hash className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                            <input 
-                                required 
-                                type="text" 
-                                className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none bg-gray-50 font-mono text-sm" 
-                                value={formData.referenceId || ''} 
-                                onChange={e => setFormData({...formData, referenceId: e.target.value})}
-                            />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Left Col: Contact Info */}
+            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 flex items-center gap-2">
+                    <User className="h-4 w-4 text-brand-500" /> Contact Details
+                </h3>
+                <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center">
+                            <Phone className="h-4 w-4 text-gray-500" />
                         </div>
+                        <div>
+                            <p className="text-xs text-gray-500">Phone</p>
+                            <a href={`tel:${formData.phone}`} className="text-sm font-medium text-brand-600 hover:underline">
+                                {formData.phone || 'N/A'}
+                            </a>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center">
+                            <Mail className="h-4 w-4 text-gray-500" />
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-500">Email</p>
+                            <a href={`mailto:${formData.email}`} className="text-sm font-medium text-brand-600 hover:underline">
+                                {formData.email || 'N/A'}
+                            </a>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center">
+                            <Briefcase className="h-4 w-4 text-gray-500" />
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-500">Lead Source</p>
+                            <p className="text-sm font-medium text-gray-900">
+                                {formData.leadSources?.[0] || 'Unknown'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Right Col: Scope & Tags */}
+            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-brand-500" /> Tags & Work
+                </h3>
+                
+                <div className="mb-4">
+                    <p className="text-xs font-semibold text-gray-400 mb-2">Scope of Work</p>
+                    <div className="space-y-2">
+                        {formData.work && formData.work.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                                {formData.work.map((w: any) => {
+                                    // Handle both string and legacy object formats
+                                    const label = typeof w === 'object' && w !== null ? w.name : w;
+                                    const opt = WORK_OPTIONS.find(o => o.label === label);
+                                    return (
+                                        <div key={label} className={`px-2.5 py-1 text-sm rounded border font-medium capitalize ${opt ? opt.color : 'bg-gray-100 text-gray-700'}`}>
+                                            {label}
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        ) : <span className="text-sm text-gray-400 italic">No work items selected</span>}
+                    </div>
+                </div>
+
+                <div>
+                    <p className="text-xs font-semibold text-gray-400 mb-2">Tags</p>
+                    <div className="flex flex-wrap gap-2">
+                        {formData.tags && formData.tags.length > 0 ? (
+                            formData.tags.map(t => {
+                                const opt = TAG_OPTIONS.find(o => o.label === t);
+                                return (
+                                    <span key={t} className={`px-2 py-0.5 text-xs rounded border font-medium ${opt ? opt.color : 'bg-gray-100'}`}>
+                                        {t}
+                                    </span>
+                                )
+                            })
+                        ) : <span className="text-sm text-gray-400 italic">No tags</span>}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {/* Common Notes Area */}
+        <div className="bg-amber-50 rounded-xl border border-amber-100 p-5 shadow-sm">
+            <h3 className="text-sm font-bold text-amber-800 uppercase tracking-wide mb-2 flex items-center gap-2">
+                <FileText className="h-4 w-4" /> Notes
+            </h3>
+            <div className="prose prose-sm text-gray-800 max-w-none whitespace-pre-wrap">
+                {formData.notes || <span className="italic text-gray-400">No notes available.</span>}
+            </div>
+        </div>
+        
+        {/* Update History Footer */}
+        {formData.lastUpdatedBy && (
+            <div className="flex items-center justify-end pt-4 mt-6 border-t border-gray-100">
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                    <History className="h-3.5 w-3.5" />
+                    <span>
+                        Last updated by <span className="font-semibold text-gray-600">{formData.lastUpdatedBy}</span> on {new Date(formData.lastUpdatedAt!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                </div>
+            </div>
+        )}
+    </div>
+  );
+
+  // --- EDIT FORM RENDERER ---
+  const renderEditForm = () => (
+    <div className="space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Contact Info */}
+            <div className="space-y-6">
+               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2 mb-4">Contact Information</h3>
+               
+               <div className="w-full">
+                 <label className="block mb-1.5 text-sm font-medium text-gray-700">Company</label>
+                 <input required type="text" className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-500 focus:outline-none" 
+                   value={formData.company || ''} onChange={e => setFormData({...formData, company: e.target.value})} />
+               </div>
+
+               <div className="w-full">
+                 <label className="block mb-1.5 text-sm font-medium text-gray-700">Contact Person</label>
+                 <input required type="text" className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-500 focus:outline-none" 
+                   value={formData.contactName || ''} onChange={e => setFormData({...formData, contactName: e.target.value})} />
+               </div>
+
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="w-full">
+                        <label className="block mb-1.5 text-sm font-medium text-gray-700">Email</label>
+                        <input type="email" className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-500 focus:outline-none" 
+                        value={formData.email || ''} onChange={e => setFormData({...formData, email: e.target.value})} />
                     </div>
                     
                     <div className="w-full">
-                        <label className="block mb-1.5 text-sm font-medium text-gray-700">Client Name <span className="text-red-500">*</span></label>
-                        <div className="relative">
-                             <Building className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                            <input 
-                                required 
-                                type="text" 
-                                className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none" 
-                                value={formData.name || ''} 
-                                onChange={e => setFormData({...formData, name: e.target.value})}
-                                placeholder="e.g. Acme Corp"
-                            />
-                        </div>
+                        <label className="block mb-1.5 text-sm font-medium text-gray-700">Phone</label>
+                        <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-500 focus:outline-none" 
+                        value={formData.phone || ''} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                    </div>
+               </div>
+            </div>
+
+            {/* Deal Info */}
+            <div className="space-y-6">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2 mb-4">Deal Details</h3>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="w-full">
+                        <label className="block mb-1.5 text-sm font-medium text-gray-700">Deal Value (₹)</label>
+                        <input type="number" className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-500 focus:outline-none" 
+                        value={formData.dealValue} onChange={e => setFormData({...formData, dealValue: Number(e.target.value)})} />
+                    </div>
+
+                    <div className="w-full">
+                        <label className="block mb-1.5 text-sm font-medium text-gray-700">Status</label>
+                        <select className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-500 focus:outline-none bg-white"
+                            value={formData.status} onChange={e => setFormData({...formData, status: e.target.value as any})}
+                        >
+                            <option value="lead">Lead</option>
+                            <option value="on progress">On Progress</option>
+                            <option value="Quote Sent">Quote Sent</option>
+                            <option value="onboarded">Onboarded</option>
+                            <option value="completed">Completed</option>
+                            <option value="drop">Drop</option>
+                        </select>
                     </div>
                 </div>
 
-                {/* Status */}
-                <div className="w-full">
-                    <label className="block mb-1.5 text-sm font-medium text-gray-700">Status <span className="text-red-500">*</span></label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        {STATUS_OPTIONS.map(opt => (
-                            <button
-                                key={opt.value}
-                                type="button"
-                                onClick={() => setFormData({...formData, status: opt.value})}
-                                className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all ${
-                                    formData.status === opt.value
-                                    ? 'bg-brand-50 border-brand-500 text-brand-700 ring-1 ring-brand-500'
-                                    : 'bg-white border-gray-200 text-gray-600 hover:border-brand-300 hover:bg-gray-50'
-                                }`}
-                            >
-                                {opt.label}
-                                {formData.status === opt.value && <Check className="h-3.5 w-3.5" />}
-                            </button>
-                        ))}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="w-full">
+                        <label className="block mb-1.5 text-sm font-medium text-gray-700">Lead Source</label>
+                        <select 
+                            className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-500 focus:outline-none bg-white"
+                            value={formData.leadSources?.[0] || ''} 
+                            onChange={e => setFormData({...formData, leadSources: [e.target.value]})}
+                        >
+                            <option value="">Select Source...</option>
+                            {LEAD_SOURCES.map(source => (
+                                <option key={source} value={source}>{source}</option>
+                            ))}
+                        </select>
                     </div>
-                </div>
 
-                {/* Work Tags */}
+                    <div className="w-full">
+                        <label className="block mb-1.5 text-sm font-medium text-gray-700">Assigned To</label>
+                        <select className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-500 focus:outline-none bg-white"
+                            value={formData.assignedTo} onChange={e => setFormData({...formData, assignedTo: e.target.value})}
+                        >
+                            <option value="Vallapata">Vallapata</option>
+                            <option value="John Doe">John Doe</option>
+                        </select>
+                    </div>
+               </div>
+               
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="w-full">
+                        <label className="block mb-1.5 text-sm font-medium text-gray-700">Last Contact</label>
+                        <CustomDatePicker 
+                            value={formData.lastContact || ''} 
+                            onChange={val => setFormData({...formData, lastContact: val})}
+                            placeholder="Select Date"
+                        />
+                    </div>
+
+                    <div className="w-full">
+                        <label className="block mb-1.5 text-sm font-medium text-gray-700">Next Follow Up</label>
+                        <CustomDatePicker 
+                            value={formData.nextFollowUp || ''} 
+                            onChange={val => setFormData({...formData, nextFollowUp: val})}
+                            placeholder="Select Date"
+                        />
+                    </div>
+               </div>
+            </div>
+        </div>
+        
+        <div className="space-y-6 border-t border-gray-100 pt-6">
+             <div className="w-full">
+                 <label className="block mb-1.5 text-sm font-medium text-gray-700">Common Notes</label>
+                 <textarea className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-brand-500 focus:outline-none h-32 text-gray-700 leading-relaxed shadow-sm"
+                    placeholder="Enter general notes about the deal here..."
+                    value={formData.notes || ''} onChange={e => setFormData({...formData, notes: e.target.value})}
+                 ></textarea>
+             </div>
+             
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="w-full">
-                    <label className="block mb-2 text-sm font-medium text-gray-700">Work Types <span className="text-red-500">*</span></label>
-                    <div className="flex flex-wrap gap-2 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                        {WORK_TYPES.map(type => {
-                            const isSelected = formData.work?.includes(type);
+                    <label className="block mb-1.5 text-sm font-medium text-gray-700">Tags</label>
+                    <div className="flex flex-wrap gap-2">
+                        {TAG_OPTIONS.map(option => {
+                            const isSelected = formData.tags?.includes(option.label);
                             return (
                                 <button
-                                    key={type}
+                                    key={option.label}
                                     type="button"
-                                    onClick={() => toggleWork(type)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all shadow-sm ${
+                                    onClick={() => toggleTag(option.label)}
+                                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${
                                         isSelected
-                                            ? getWorkTypeStyles(type) + ' ring-2 ring-offset-1 ring-current opacity-100'
-                                            : 'bg-white text-gray-500 border-gray-200 opacity-70 hover:opacity-100'
+                                            ? option.color + ' ring-2 ring-offset-1 ring-brand-300'
+                                            : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:border-gray-300'
                                     }`}
                                 >
-                                    {type}
+                                    {option.label}
                                 </button>
                             );
                         })}
                     </div>
-                    {(!formData.work || formData.work.length === 0) && (
-                        <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
-                            ⚠️ Please select at least one work type.
-                        </p>
-                    )}
                 </div>
 
-                {/* Footer Actions */}
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                    <button type="button" onClick={onClose} className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium">
-                        Cancel
-                    </button>
-                    <button type="submit" className="px-5 py-2.5 text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors font-medium flex items-center gap-2 shadow-lg shadow-brand-500/30">
-                        <Save className="h-4 w-4" /> Save Company
-                    </button>
+                <div className="w-full">
+                    <label className="block mb-1.5 text-sm font-medium text-gray-700">Work Types</label>
+                    <div className="space-y-4">
+                        <div className="flex flex-wrap gap-2">
+                            {WORK_OPTIONS.map(option => {
+                                // Defensive check against legacy objects
+                                const currentWork = (formData.work || []).map((w: any) => typeof w === 'object' ? w.name : w);
+                                const isSelected = currentWork.includes(option.label);
+                                return (
+                                    <button
+                                        key={option.label}
+                                        type="button"
+                                        onClick={() => toggleWork(option.label)}
+                                        className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${
+                                            isSelected
+                                                ? option.color + ' ring-2 ring-offset-1 ring-brand-300'
+                                                : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                                    }`}
+                                    >
+                                        {option.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
                 </div>
+             </div>
+        </div>
+    </div>
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-all">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] overflow-hidden flex flex-col">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-white z-10">
+          <h2 className="text-xl font-bold text-gray-800">
+            {initialData ? (isView ? 'Deal Overview' : 'Edit Deal') : 'Create New Deal'}
+          </h2>
+          <div className="flex items-center gap-2">
+            {isView && (
+                <button onClick={toggleEdit} className="px-4 py-2 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors">
+                    <Edit2 className="h-4 w-4" /> Edit Details
+                </button>
+            )}
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-full transition-colors">
+                <X className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Modal Content */}
+        <div className="overflow-y-auto p-6 flex-1 bg-white">
+            <form onSubmit={handleSubmit}>
+                {isView ? renderView() : renderEditForm()}
+                
+                {/* Footer Actions (Only for Edit Mode or to Close) */}
+                {!isView && (
+                    <div className="flex justify-end gap-3 pt-8 mt-4 border-t border-gray-100">
+                        <button type="button" onClick={handleCancel} className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium">
+                            Cancel
+                        </button>
+                        <button type="submit" className="px-5 py-2.5 text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors font-medium flex items-center gap-2 shadow-lg shadow-brand-500/30">
+                            <Save className="h-4 w-4" /> Save Changes
+                        </button>
+                    </div>
+                )}
             </form>
         </div>
       </div>

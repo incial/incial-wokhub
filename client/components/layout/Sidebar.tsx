@@ -40,7 +40,7 @@ export const Sidebar: React.FC = () => {
         <div className="mb-8">
             <p className="px-7 text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Overview</p>
             <div className="space-y-1">
-                <NavItem icon={Users} label="CRM & Leads" to="/crm" active={currentPath === '/crm'} />
+                {isAdmin && <NavItem icon={Users} label="CRM & Leads" to="/crm" active={currentPath === '/crm'} />}
                 <NavItem icon={CheckSquare} label="Tasks" to="/tasks" active={currentPath === '/tasks'} />
                 <NavItem icon={Briefcase} label="Companies" to="/companies" active={currentPath === '/companies'} />
             </div>

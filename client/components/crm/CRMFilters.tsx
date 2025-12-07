@@ -34,6 +34,7 @@ export const CRMFilters: React.FC<CRMFiltersProps> = ({ filters, setFilters, onR
     { label: "On Progress", value: "on progress" },
     { label: "Quote Sent", value: "Quote Sent" },
     { label: "Onboarded", value: "onboarded" },
+    { label: "Completed", value: "completed" },
     { label: "Drop", value: "drop" },
   ];
 

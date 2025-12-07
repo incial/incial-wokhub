@@ -1,5 +1,5 @@
 
-export type CRMStatus = 'onboarded' | 'drop' | 'on progress' | 'Quote Sent' | 'lead';
+export type CRMStatus = 'onboarded' | 'drop' | 'on progress' | 'Quote Sent' | 'lead' | 'completed';
 
 export interface User {
   id: number;

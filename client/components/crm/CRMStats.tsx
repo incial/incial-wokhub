@@ -5,7 +5,7 @@ import { CRMEntry } from '../../types';
 
 export const CRMStats: React.FC<{ entries: CRMEntry[] }> = ({ entries }) => {
     // Removed totalValue calculation
-    const activeDeals = entries.filter(e => e.status !== 'drop' && e.status !== 'onboarded').length;
+    const activeDeals = entries.filter(e => e.status !== 'drop' && e.status !== 'onboarded' && e.status !== 'completed').length;
     const onboarded = entries.filter(e => e.status === 'onboarded').length;
 
     return (

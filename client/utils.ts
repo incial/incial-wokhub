@@ -30,6 +30,7 @@ export const getFollowUpColor = (dateString: string) => {
 export const getStatusStyles = (status: string) => {
   switch (status?.toLowerCase()) {
     case 'onboarded': return 'bg-green-100 text-green-700 border-green-200';
+    case 'completed': return 'bg-purple-100 text-purple-700 border-purple-200';
     case 'drop': return 'bg-red-100 text-red-700 border-red-200';
     case 'on progress': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
     case 'quote sent': return 'bg-blue-100 text-blue-700 border-blue-200';

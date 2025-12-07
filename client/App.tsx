@@ -24,19 +24,28 @@ const AdminRoute: React.FC<{ children: React.ReactElement }> = ({ children }) =>
       return <Navigate to="/login" replace />;
     }
     if (user?.role !== 'ROLE_ADMIN') {
-        // Redirect employees to CRM if they try to access admin pages
-        return <Navigate to="/crm" replace />;
+        // Redirect employees to Tasks if they try to access admin pages
+        return <Navigate to="/tasks" replace />;
     }
     return children;
 };
 
 // Public Route Wrapper (redirects to dashboard if logged in)
 const PublicRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
     if (isAuthenticated) {
-      return <Navigate to="/crm" replace />;
+      const redirectTo = user?.role === 'ROLE_ADMIN' ? '/crm' : '/tasks';
+      return <Navigate to={redirectTo} replace />;
     }
     return children;
+};
+
+// Helper for root redirect based on role
+const RootRedirect: React.FC = () => {
+    const { isAuthenticated, user } = useAuth();
+    if (!isAuthenticated) return <Navigate to="/login" replace />;
+    const to = user?.role === 'ROLE_ADMIN' ? '/crm' : '/tasks';
+    return <Navigate to={to} replace />;
 };
 
 const AppRoutes = () => {
@@ -47,11 +56,14 @@ const AppRoutes = () => {
                     <LoginPage />
                 </PublicRoute>
             } />
+            
+            {/* CRM is now Admin Only */}
             <Route path="/crm" element={
-                <ProtectedRoute>
+                <AdminRoute>
                     <CRMPage />
-                </ProtectedRoute>
+                </AdminRoute>
             } />
+            
             <Route path="/companies" element={
                 <ProtectedRoute>
                     <CompaniesPage />
@@ -75,9 +87,9 @@ const AppRoutes = () => {
                 </AdminRoute>
             } />
 
-            {/* Redirect root to CRM for this demo */}
-            <Route path="/" element={<Navigate to="/crm" replace />} />
-            <Route path="*" element={<Navigate to="/crm" replace />} />
+            {/* Smart Redirects */}
+            <Route path="/" element={<RootRedirect />} />
+            <Route path="*" element={<RootRedirect />} />
         </Routes>
     );
 }
