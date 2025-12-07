@@ -9,8 +9,10 @@ import { CRMForm } from '../components/crm/CRMForm';
 import { FilterState, CRMEntry } from '../types';
 import { Plus, Download } from 'lucide-react';
 import { crmApi } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export const CRMPage: React.FC = () => {
+  const { user } = useAuth();
   const [entries, setEntries] = useState<CRMEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -90,13 +92,21 @@ export const CRMPage: React.FC = () => {
   };
 
   const handleFormSubmit = async (data: Partial<CRMEntry>) => {
+      // Add Audit Data
+      const auditData = {
+          lastUpdatedBy: user?.name || 'Unknown',
+          lastUpdatedAt: new Date().toISOString()
+      };
+
+      const finalData = { ...data, ...auditData };
+
       if (editingEntry) {
           // Update
-          const updated = { ...editingEntry, ...data } as CRMEntry;
+          const updated = { ...editingEntry, ...finalData } as CRMEntry;
           // Optimistic
           setEntries(prev => prev.map(e => e.id === updated.id ? updated : e));
           
-          await crmApi.update(updated.id, data);
+          await crmApi.update(updated.id, finalData);
           
           // Sync Storage for demo
           const current = JSON.parse(localStorage.getItem('mock_crm_data') || '[]');
@@ -105,7 +115,7 @@ export const CRMPage: React.FC = () => {
 
       } else {
           // Create
-          const newEntry = await crmApi.create(data as CRMEntry); // Wait for ID
+          const newEntry = await crmApi.create(finalData as CRMEntry); // Wait for ID
           setEntries(prev => [newEntry, ...prev]);
           
           // Sync Storage

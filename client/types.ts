@@ -31,6 +31,8 @@ export interface CRMEntry {
   tags: string[];
   work: string[];
   leadSources: string[];
+  lastUpdatedBy?: string;
+  lastUpdatedAt?: string;
 }
 
 export interface FilterState {

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Save, Edit2, User, Phone, Mail, Calendar, Briefcase, FileText, Tag, DollarSign, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { X, Save, Edit2, User, Phone, Mail, Calendar, Briefcase, FileText, Tag, DollarSign, CheckCircle, Clock, AlertCircle, History } from 'lucide-react';
 import { CRMEntry } from '../../types';
 import { getStatusStyles, formatDate, getFollowUpColor, formatMoney } from '../../utils';
 import { CustomDatePicker } from '../ui/CustomDatePicker';
@@ -270,6 +270,18 @@ export const CRMForm: React.FC<CRMFormProps> = ({ isOpen, onClose, onSubmit, ini
                 {formData.notes || <span className="italic text-gray-400">No notes available.</span>}
             </div>
         </div>
+        
+        {/* Update History Footer */}
+        {formData.lastUpdatedBy && (
+            <div className="flex items-center justify-end pt-4 mt-6 border-t border-gray-100">
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                    <History className="h-3.5 w-3.5" />
+                    <span>
+                        Last updated by <span className="font-semibold text-gray-600">{formData.lastUpdatedBy}</span> on {new Date(formData.lastUpdatedAt!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                </div>
+            </div>
+        )}
     </div>
   );
 
@@ -431,7 +443,7 @@ export const CRMForm: React.FC<CRMFormProps> = ({ isOpen, onClose, onSubmit, ini
                                             isSelected
                                                 ? option.color + ' ring-2 ring-offset-1 ring-brand-300'
                                                 : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:border-gray-300'
-                                        }`}
+                                    }`}
                                     >
                                         {option.label}
                                     </button>

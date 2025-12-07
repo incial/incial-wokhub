@@ -16,7 +16,9 @@ export const MOCK_CRM_DATA: CRMEntry[] = [
     status: "on progress",
     tags: ["Follow-up", "VIP"],
     work: ["branding", "marketing"],
-    leadSources: ["Google Business"]
+    leadSources: ["Google Business"],
+    lastUpdatedBy: "Vallapata",
+    lastUpdatedAt: "2023-10-26T10:00:00Z"
   },
   {
     id: 2,
@@ -32,7 +34,9 @@ export const MOCK_CRM_DATA: CRMEntry[] = [
     status: "lead",
     tags: ["New"],
     work: ["development"],
-    leadSources: ["Referral"]
+    leadSources: ["Referral"],
+    lastUpdatedBy: "John Doe",
+    lastUpdatedAt: "2023-10-21T14:30:00Z"
   },
   {
     id: 3,
@@ -48,7 +52,9 @@ export const MOCK_CRM_DATA: CRMEntry[] = [
     status: "onboarded",
     tags: ["Eco"],
     work: ["consulting"],
-    leadSources: ["LinkedIn"]
+    leadSources: ["LinkedIn"],
+    lastUpdatedBy: "Vallapata",
+    lastUpdatedAt: "2023-10-29T09:15:00Z"
   },
   {
     id: 4,
@@ -64,7 +70,9 @@ export const MOCK_CRM_DATA: CRMEntry[] = [
     status: "drop",
     tags: [],
     work: ["branding"],
-    leadSources: ["Cold Call"]
+    leadSources: ["Cold Call"],
+    lastUpdatedBy: "Demo User",
+    lastUpdatedAt: "2023-09-16T11:00:00Z"
   },
    {
     id: 5,
@@ -80,7 +88,9 @@ export const MOCK_CRM_DATA: CRMEntry[] = [
     status: "Quote Sent",
     tags: ["Hot"],
     work: ["software"],
-    leadSources: ["Website"]
+    leadSources: ["Website"],
+    lastUpdatedBy: "Vallapata",
+    lastUpdatedAt: "2023-10-29T16:45:00Z"
   }
 ];
 
