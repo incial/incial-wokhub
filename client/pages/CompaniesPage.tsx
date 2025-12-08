@@ -7,8 +7,8 @@ import { CompaniesFilters } from '../components/companies/CompaniesFilters';
 import { CompanyDetailsModal } from '../components/companies/CompanyDetailsModal';
 import { CompaniesForm } from '../components/companies/CompaniesForm';
 import { DeleteConfirmationModal } from '../components/ui/DeleteConfirmationModal';
-import { Company, CompanyFilterState, CRMEntry } from '../types';
-import { Briefcase, Building, Archive, ArrowRight, CheckCircle } from 'lucide-react';
+import { CRMEntry, CompanyFilterState } from '../types';
+import { Briefcase, Building, Archive, ArrowRight, CheckCircle, Plus } from 'lucide-react';
 import { crmApi } from '../services/api';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -18,8 +18,8 @@ export const CompaniesPage: React.FC = () => {
   const [crmEntries, setCrmEntries] = useState<CRMEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'active' | 'dropped' | 'past'>('active');
-  const [viewingCompany, setViewingCompany] = useState<Company | undefined>(undefined);
-  const [editingCompany, setEditingCompany] = useState<Company | undefined>(undefined);
+  const [viewingCompany, setViewingCompany] = useState<CRMEntry | undefined>(undefined);
+  const [editingCompany, setEditingCompany] = useState<CRMEntry | undefined>(undefined);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   
@@ -35,7 +35,6 @@ export const CompaniesPage: React.FC = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      // Source of truth is strictly the CRM
       const crmData = await crmApi.getAll();
       setCrmEntries(crmData.crmList);
     } catch (error) {
@@ -49,33 +48,21 @@ export const CompaniesPage: React.FC = () => {
     fetchData();
   }, []);
 
-  // Transform CRM Data to Company View Structure with Reference ID
-  const transformedData = useMemo(() => {
-      return crmEntries.map(entry => ({
-          id: entry.id,
-          // Generate Reference ID: REF-{Year}-{ID}
-          referenceId: `REF-${new Date().getFullYear()}-${entry.id.toString().padStart(3, '0')}`,
-          name: entry.company,
-          contactPerson: entry.contactName, // Map contact name
-          work: entry.work.map((w: any) => typeof w === 'object' ? w.name : w),
-          status: entry.status,
-          createdAt: entry.lastContact,
-          updatedAt: entry.lastUpdatedAt || new Date().toISOString(),
-          lastUpdatedBy: entry.lastUpdatedBy,
-          lastUpdatedAt: entry.lastUpdatedAt,
-          driveLink: entry.driveLink, // Map Drive Link
-          socials: entry.socials // Map Social Links
-          // Use properties from CRM that map to Company interface
-      } as Company));
+  // Filter out Leads - We only want "Companies"
+  // Rule: Exclude 'lead' status.
+  const allCompanies = useMemo(() => {
+    return crmEntries.filter(entry => entry.status !== 'lead');
   }, [crmEntries]);
 
   // Separate into Active, Dropped, and Past
   const categorizedData = useMemo(() => {
-      const active = transformedData.filter(c => c.status !== 'drop' && c.status !== 'completed');
-      const dropped = transformedData.filter(c => c.status === 'drop');
-      const past = transformedData.filter(c => c.status === 'completed');
+      const active = allCompanies.filter(c => 
+          ['onboarded', 'on progress', 'Quote Sent'].includes(c.status)
+      );
+      const dropped = allCompanies.filter(c => c.status === 'drop');
+      const past = allCompanies.filter(c => c.status === 'completed');
       return { active, dropped, past };
-  }, [transformedData]);
+  }, [allCompanies]);
 
   // Filtering & Sorting
   const displayData = useMemo(() => {
@@ -85,9 +72,9 @@ export const CompaniesPage: React.FC = () => {
 
     let result = sourceList.filter(item => {
       const matchesSearch = filters.search === '' || 
-        item.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-        (item.contactPerson && item.contactPerson.toLowerCase().includes(filters.search.toLowerCase())) ||
-        item.referenceId.toLowerCase().includes(filters.search.toLowerCase());
+        item.company.toLowerCase().includes(filters.search.toLowerCase()) ||
+        (item.contactName && item.contactName.toLowerCase().includes(filters.search.toLowerCase())) ||
+        (item.referenceId && item.referenceId.toLowerCase().includes(filters.search.toLowerCase()));
       
       const matchesStatus = filters.status === '' || item.status === filters.status;
       const matchesWork = filters.workType === '' || item.work.includes(filters.workType);
@@ -99,44 +86,59 @@ export const CompaniesPage: React.FC = () => {
     return result.sort((a, b) => b.id - a.id);
   }, [categorizedData, activeTab, filters]);
 
-  const handleEdit = (company: Company) => {
+  const handleEdit = (company: CRMEntry) => {
       setEditingCompany(company);
       setIsEditModalOpen(true);
   };
 
-  const handleUpdateCompany = async (updatedComp: Partial<Company>) => {
-      // Find corresponding CRM Entry to update
-      // Since this is a CRM-first system, editing a company updates the underlying deal/contact
-      const crmIndex = crmEntries.findIndex(c => c.id === updatedComp.id);
-      
-      if (crmIndex !== -1) {
-          const oldEntry = crmEntries[crmIndex];
-          const newEntry: CRMEntry = {
-              ...oldEntry,
-              company: updatedComp.name || oldEntry.company,
-              // Map Company Status back to CRM Status where possible, or keep old if incompatible
-              // For now, we assume if user changes status in Company view, it might need manual mapping
-              // We will just update fields that are 1:1 safe
-              driveLink: updatedComp.driveLink,
-              socials: updatedComp.socials,
-              work: updatedComp.work || oldEntry.work,
+  const handleCreate = () => {
+      setEditingCompany(undefined);
+      setIsEditModalOpen(true);
+  }
+
+  const handleUpdateCompany = async (updatedData: Partial<CRMEntry>) => {
+      // Logic for both Create and Update
+      if (editingCompany) {
+          // Update Existing
+          const updatedEntry: CRMEntry = {
+              ...editingCompany,
+              ...updatedData,
               lastUpdatedBy: user?.name || 'Unknown',
               lastUpdatedAt: new Date().toISOString()
           };
-
-          // Optimistic Update
-          const newEntries = [...crmEntries];
-          newEntries[crmIndex] = newEntry;
-          setCrmEntries(newEntries);
           
-          await crmApi.update(newEntry.id, newEntry);
-          // Sync simulated storage for demo persistence
+          const newEntries = crmEntries.map(e => e.id === updatedEntry.id ? updatedEntry : e);
+          setCrmEntries(newEntries);
+          await crmApi.update(updatedEntry.id, updatedEntry);
+          localStorage.setItem('mock_crm_data', JSON.stringify(newEntries));
+
+      } else {
+          // Create New
+          const newEntryData = {
+              ...updatedData,
+              lastUpdatedBy: user?.name || 'Unknown',
+              lastUpdatedAt: new Date().toISOString(),
+              // Ensure basic fields for CRM Entry are present
+              assignedTo: updatedData.assignedTo || 'Vallapata',
+              dealValue: 0,
+              phone: '',
+              email: '',
+              tags: [],
+              leadSources: [],
+              lastContact: new Date().toISOString(),
+              nextFollowUp: new Date().toISOString()
+          };
+          
+          const newEntry = await crmApi.create(newEntryData as CRMEntry);
+          const newEntries = [newEntry, ...crmEntries];
+          setCrmEntries(newEntries);
           localStorage.setItem('mock_crm_data', JSON.stringify(newEntries));
       }
+
       setIsEditModalOpen(false);
   };
 
-  const handleView = (company: Company) => {
+  const handleView = (company: CRMEntry) => {
       setViewingCompany(company);
       setIsViewModalOpen(true);
   };
@@ -175,9 +177,9 @@ export const CompaniesPage: React.FC = () => {
   // Helper to get name for delete modal
   const itemToDeleteName = useMemo(() => {
       if (!deleteId) return '';
-      const item = transformedData.find(e => e.id === deleteId);
-      return item ? item.name : '';
-  }, [deleteId, transformedData]);
+      const item = crmEntries.find(e => e.id === deleteId);
+      return item ? item.company : '';
+  }, [deleteId, crmEntries]);
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC]">
@@ -198,6 +200,13 @@ export const CompaniesPage: React.FC = () => {
                 </div>
             </div>
             <div className="flex gap-3">
+                 <button 
+                    onClick={handleCreate}
+                    className="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 font-semibold shadow-lg shadow-brand-500/30 transition-all active:scale-95"
+                 >
+                    <Plus className="h-5 w-5" />
+                    New Company
+                 </button>
                 <Link 
                     to="/crm"
                     className="bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 px-5 py-2.5 rounded-xl flex items-center gap-2 font-semibold transition-all shadow-sm"

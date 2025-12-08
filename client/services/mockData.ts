@@ -1,5 +1,5 @@
 
-import { CRMEntry, Company, Task } from '../types';
+import { CRMEntry, Task } from '../types';
 
 export const MOCK_CRM_DATA: CRMEntry[] = [
   {
@@ -25,7 +25,8 @@ export const MOCK_CRM_DATA: CRMEntry[] = [
         twitter: "https://twitter.com/smrrubbers"
     },
     lastUpdatedBy: "Vallapata",
-    lastUpdatedAt: "2023-10-26T10:00:00Z"
+    lastUpdatedAt: "2023-10-26T10:00:00Z",
+    referenceId: "REF-2023-001"
   },
   {
     id: 2,
@@ -71,7 +72,8 @@ export const MOCK_CRM_DATA: CRMEntry[] = [
         facebook: "https://facebook.com/greenearth"
     },
     lastUpdatedBy: "Vallapata",
-    lastUpdatedAt: "2023-10-29T09:15:00Z"
+    lastUpdatedAt: "2023-10-29T09:15:00Z",
+    referenceId: "REF-2023-003"
   },
   {
     id: 4,
@@ -112,7 +114,8 @@ export const MOCK_CRM_DATA: CRMEntry[] = [
         linkedin: "https://linkedin.com/company/alphalogistics"
     },
     lastUpdatedBy: "Vallapata",
-    lastUpdatedAt: "2023-10-29T16:45:00Z"
+    lastUpdatedAt: "2023-10-29T16:45:00Z",
+    referenceId: "REF-2023-005"
   },
   {
     id: 6,
@@ -136,7 +139,8 @@ export const MOCK_CRM_DATA: CRMEntry[] = [
         other: "https://behance.net/quantum-concepts"
     },
     lastUpdatedBy: "Vallapata",
-    lastUpdatedAt: "2023-11-06T09:30:00Z"
+    lastUpdatedAt: "2023-11-06T09:30:00Z",
+    referenceId: "REF-2023-006"
   },
   {
     id: 7,
@@ -200,7 +204,8 @@ export const MOCK_CRM_DATA: CRMEntry[] = [
         facebook: "https://facebook.com/apexconstruction"
     },
     lastUpdatedBy: "Vallapata",
-    lastUpdatedAt: "2023-10-01T16:00:00Z"
+    lastUpdatedAt: "2023-10-01T16:00:00Z",
+    referenceId: "REF-2023-009"
   },
   {
     id: 10,
@@ -223,93 +228,35 @@ export const MOCK_CRM_DATA: CRMEntry[] = [
         twitter: "https://twitter.com/pixelperfect"
     },
     lastUpdatedBy: "Vallapata",
-    lastUpdatedAt: "2023-11-08T13:45:00Z"
-  }
-];
-
-// Fallback data if CRM -> Company derivation fails or for direct testing
-export const MOCK_COMPANIES_DATA: Company[] = [
-  {
-    id: 1,
-    referenceId: "REF-2024-001",
-    name: "Acme Innovations",
-    work: ["Marketing", "Branding"],
-    status: "running",
-    createdAt: "2023-01-15T10:00:00Z",
-    updatedAt: "2023-10-01T14:00:00Z",
-    lastUpdatedBy: "Demo User",
-    lastUpdatedAt: "2023-10-01T14:00:00Z",
-    socials: {
-        website: "https://acmeinno.com",
-        twitter: "https://twitter.com/acme"
-    }
-  },
-  {
-    id: 2,
-    referenceId: "REF-2024-002",
-    name: "CyberDyne Systems",
-    work: ["UI/UX", "Website"],
-    status: "not_started",
-    createdAt: "2023-02-20T09:30:00Z",
-    updatedAt: "2023-02-20T09:30:00Z",
-    lastUpdatedBy: "John Doe",
-    lastUpdatedAt: "2023-02-20T09:30:00Z",
-    driveLink: "https://drive.google.com/cyberdyne"
-  },
-  {
-    id: 3,
-    referenceId: "REF-2024-003",
-    name: "Globex Corporation",
-    work: ["Video", "VFX"],
-    status: "completed",
-    createdAt: "2022-11-05T16:20:00Z",
-    updatedAt: "2023-09-15T11:45:00Z",
-    lastUpdatedBy: "Vallapata",
-    lastUpdatedAt: "2023-09-15T11:45:00Z"
-  },
-  {
-    id: 4,
-    referenceId: "REF-2024-004",
-    name: "Soylent Corp",
-    work: ["Ads", "Poster"],
-    status: "discontinued",
-    createdAt: "2023-05-12T08:00:00Z",
-    updatedAt: "2023-06-01T10:00:00Z",
-    lastUpdatedBy: "Vallapata",
-    lastUpdatedAt: "2023-06-01T10:00:00Z"
-  },
-  {
-    id: 5,
-    referenceId: "REF-2024-005",
-    name: "Massive Dynamic",
-    work: ["LinkedIn", "Marketing"],
-    status: "running",
-    createdAt: "2023-08-10T13:15:00Z",
-    updatedAt: "2023-10-25T09:00:00Z",
-    lastUpdatedBy: "Demo User",
-    lastUpdatedAt: "2023-10-25T09:00:00Z"
+    lastUpdatedAt: "2023-11-08T13:45:00Z",
+    referenceId: "REF-2023-010"
   }
 ];
 
 export const MOCK_TASKS_DATA: Task[] = [
   {
     id: 1,
+    companyId: 1,
     title: "Draft Proposal for Acme",
     description: "Create a preliminary branding deck for Acme Innovations based on the last meeting.",
     status: "In Progress",
     priority: "High",
+    taskType: "General",
     assignedTo: "Vallapata",
     dueDate: new Date().toISOString().split('T')[0], // Today
     createdAt: "2023-10-20T10:00:00Z",
+    taskLink: "https://docs.google.com/document/d/sample-proposal",
     lastUpdatedBy: "Vallapata",
     lastUpdatedAt: "2023-10-20T12:00:00Z"
   },
   {
     id: 2,
+    companyId: 2,
     title: "Follow up with TechFlow",
     description: "Send an email regarding the missing technical specifications.",
     status: "Not Started",
     priority: "Medium",
+    taskType: "General",
     assignedTo: "John Doe",
     dueDate: "2023-11-05",
     createdAt: "2023-10-21T11:00:00Z",
@@ -318,74 +265,43 @@ export const MOCK_TASKS_DATA: Task[] = [
   },
   {
     id: 3,
+    companyId: 1,
     title: "Update Website Portfolio",
     description: "Add the latest VFX project from Globex to the homepage slider.",
-    status: "Completed",
+    status: "Done",
     priority: "Low",
+    taskType: "Post",
     assignedTo: "Vallapata",
     dueDate: "2023-10-15",
     createdAt: "2023-10-01T09:00:00Z",
+    taskLink: "https://stmarysrubbers.com/portfolio",
     lastUpdatedBy: "Vallapata",
     lastUpdatedAt: "2023-10-15T15:45:00Z"
   },
   {
     id: 4,
+    companyId: 1,
+    title: "New Reel Idea",
+    description: "Brainstorm reel ideas for the new product launch.",
+    status: "Dropped",
+    priority: "Medium",
+    taskType: "Reel",
+    assignedTo: "Vallapata",
+    dueDate: "2023-10-28",
+    createdAt: "2023-10-20T10:00:00Z"
+  },
+  {
+    id: 5,
+    companyId: 5,
     title: "Prepare Invoice for SMR",
     description: "Finalize the invoice for the logo design work.",
     status: "Not Started",
     priority: "High",
+    taskType: "General",
     assignedTo: "Demo User",
     dueDate: "2023-11-01",
     createdAt: "2023-10-25T14:00:00Z",
     lastUpdatedBy: "Demo User",
     lastUpdatedAt: "2023-10-25T14:10:00Z"
-  },
-  {
-    id: 5,
-    title: "Team Sync Meeting",
-    description: "Weekly sync to discuss pipeline progress.",
-    status: "In Progress",
-    priority: "Medium",
-    assignedTo: "Demo User",
-    dueDate: new Date().toISOString().split('T')[0],
-    createdAt: "2023-10-26T08:30:00Z",
-    lastUpdatedBy: "Demo User",
-    lastUpdatedAt: "2023-10-26T08:30:00Z"
-  },
-  {
-    id: 6,
-    title: "Send VFX Reel to Quantum",
-    description: "Compile the best sci-fi shots for the Quantum Dynamics proposal.",
-    status: "Not Started",
-    priority: "High",
-    assignedTo: "Vallapata",
-    dueDate: new Date().toISOString().split('T')[0],
-    createdAt: "2023-11-06T10:00:00Z",
-    lastUpdatedBy: "Vallapata",
-    lastUpdatedAt: "2023-11-06T10:00:00Z"
-  },
-  {
-    id: 7,
-    title: "Shopify Setup Call - Blue Sky",
-    description: "Initial requirements gathering for the e-commerce store.",
-    status: "In Progress",
-    priority: "Medium",
-    assignedTo: "John Doe",
-    dueDate: "2023-11-14",
-    createdAt: "2023-11-02T15:00:00Z",
-    lastUpdatedBy: "John Doe",
-    lastUpdatedAt: "2023-11-03T09:00:00Z"
-  },
-  {
-    id: 8,
-    title: "Archive Apex Project",
-    description: "Move all Final Cut Pro files to the long-term storage drive.",
-    status: "Not Started",
-    priority: "Low",
-    assignedTo: "Vallapata",
-    dueDate: "2023-11-20",
-    createdAt: "2023-11-01T10:00:00Z",
-    lastUpdatedBy: "Vallapata",
-    lastUpdatedAt: "2023-11-01T10:00:00Z"
   }
 ];

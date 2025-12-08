@@ -1,19 +1,20 @@
 
 import React from 'react';
 import { X, Hash, User, Calendar, Tag, Clock, ExternalLink, HardDrive, Linkedin, Instagram, Facebook, Twitter, Globe, Link as LinkIcon } from 'lucide-react';
-import { Company } from '../../types';
+import { CRMEntry } from '../../types';
 import { getCompanyStatusStyles, getWorkTypeStyles, formatDate } from '../../utils';
 
 interface CompanyDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  company?: Company;
+  company?: CRMEntry;
 }
 
 export const CompanyDetailsModal: React.FC<CompanyDetailsModalProps> = ({ isOpen, onClose, company }) => {
   if (!isOpen || !company) return null;
 
   const hasSocials = company.socials && Object.values(company.socials).some(Boolean);
+  const refId = company.referenceId || `REF-${new Date().getFullYear()}-${company.id.toString().padStart(3, '0')}`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
@@ -22,10 +23,10 @@ export const CompanyDetailsModal: React.FC<CompanyDetailsModalProps> = ({ isOpen
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-gray-50/50">
             <div>
-                 <h2 className="text-xl font-bold text-gray-900">{company.name}</h2>
+                 <h2 className="text-xl font-bold text-gray-900">{company.company}</h2>
                  <div className="flex items-center gap-2 mt-1">
                      <span className="text-xs font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 flex items-center gap-1">
-                        <Hash className="h-3 w-3" /> {company.referenceId}
+                        <Hash className="h-3 w-3" /> {refId}
                      </span>
                  </div>
             </div>
@@ -51,7 +52,7 @@ export const CompanyDetailsModal: React.FC<CompanyDetailsModalProps> = ({ isOpen
                     <User className="h-4 w-4" /> Key Contact
                 </h3>
                 <p className="text-gray-900 font-medium text-lg">
-                    {company.contactPerson || <span className="text-gray-400 italic text-sm">No contact person listed</span>}
+                    {company.contactName || <span className="text-gray-400 italic text-sm">No contact person listed</span>}
                 </p>
             </div>
 
@@ -139,9 +140,9 @@ export const CompanyDetailsModal: React.FC<CompanyDetailsModalProps> = ({ isOpen
             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
                 <div>
                     <p className="text-xs text-gray-400 mb-1 flex items-center gap-1">
-                        <Calendar className="h-3 w-3" /> Created On
+                        <Calendar className="h-3 w-3" /> Last Contact
                     </p>
-                    <p className="text-sm font-medium text-gray-700">{formatDate(company.createdAt)}</p>
+                    <p className="text-sm font-medium text-gray-700">{formatDate(company.lastContact)}</p>
                 </div>
                 {company.lastUpdatedBy && (
                     <div>
@@ -149,7 +150,7 @@ export const CompanyDetailsModal: React.FC<CompanyDetailsModalProps> = ({ isOpen
                             <Clock className="h-3 w-3" /> Last Update
                         </p>
                         <p className="text-sm font-medium text-gray-700">
-                            {formatDate(company.updatedAt)} <span className="text-gray-400 text-xs">by {company.lastUpdatedBy}</span>
+                            {formatDate(company.lastUpdatedAt || '')} <span className="text-gray-400 text-xs">by {company.lastUpdatedBy}</span>
                         </p>
                     </div>
                 )}

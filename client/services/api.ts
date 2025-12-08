@@ -1,7 +1,7 @@
 
 import axios from 'axios';
-import { CRMEntry, Company, Task } from '../types';
-import { MOCK_CRM_DATA, MOCK_COMPANIES_DATA, MOCK_TASKS_DATA } from './mockData';
+import { CRMEntry, Task } from '../types';
+import { MOCK_CRM_DATA, MOCK_TASKS_DATA } from './mockData';
 
 // In a real app, this comes from env
 const API_URL = 'https://api.incial.com/api/v1'; 
@@ -49,7 +49,14 @@ export const crmApi = {
   create: async (data: Omit<CRMEntry, 'id'>): Promise<CRMEntry> => {
     // REAL CALL: return api.post("/crm/create", data);
     await delay(400);
-    const newEntry = { ...data, id: Date.now() };
+    const newEntry = { 
+        ...data, 
+        id: Date.now(),
+        // Generate a reference ID if it's a "Company" type status
+        referenceId: (data.status === 'onboarded' || data.status === 'on progress') 
+            ? `REF-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`
+            : undefined
+    };
     return newEntry;
   },
 
@@ -63,35 +70,6 @@ export const crmApi = {
     // REAL CALL: return api.delete(`/crm/delete/${id}`);
     await delay(300);
   }
-};
-
-export const companiesApi = {
-    getAll: async (): Promise<Company[]> => {
-      await delay(600);
-      const stored = localStorage.getItem('mock_companies_data');
-      if (stored) return JSON.parse(stored);
-      return MOCK_COMPANIES_DATA;
-    },
-  
-    create: async (data: Omit<Company, 'id' | 'createdAt' | 'updatedAt'>): Promise<Company> => {
-      await delay(400);
-      const newEntry: Company = { 
-        ...data, 
-        id: Date.now(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      return newEntry;
-    },
-  
-    update: async (id: number, data: Partial<Company>): Promise<Company> => {
-       await delay(300);
-       return { id, ...data, updatedAt: new Date().toISOString() } as Company;
-    },
-  
-    delete: async (id: number): Promise<void> => {
-      await delay(300);
-    }
 };
 
 export const tasksApi = {
@@ -127,24 +105,24 @@ export const authApi = {
     // REAL CALL: return api.post("/auth/login", { email, password });
     await delay(800);
     
-    // ADMIN LOGIN
+    // ADMIN LOGIN -> Mapped to 'Vallapata' to match mock data
     if (email === 'demo@incial.com' && password === 'demo') {
       return {
         statusCode: 200,
         token: "mock-jwt-token-admin",
         role: "ROLE_ADMIN",
-        user: { id: 1, name: "Admin User", email, role: "ROLE_ADMIN" },
+        user: { id: 1, name: "Vallapata", email, role: "ROLE_ADMIN" },
         message: "Login successful"
       };
     }
 
-    // EMPLOYEE LOGIN
+    // EMPLOYEE LOGIN -> Mapped to 'John Doe' to match mock data
     if (email === 'employee@incial.com' && password === 'employee') {
       return {
         statusCode: 200,
         token: "mock-jwt-token-employee",
         role: "ROLE_EMPLOYEE",
-        user: { id: 2, name: "Employee User", email, role: "ROLE_EMPLOYEE" },
+        user: { id: 2, name: "John Doe", email, role: "ROLE_EMPLOYEE" },
         message: "Login successful"
       };
     }

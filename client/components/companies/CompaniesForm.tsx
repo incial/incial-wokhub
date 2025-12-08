@@ -1,14 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Save, Building, Hash, Check, History, HardDrive, Globe, Linkedin, Instagram, Facebook, Twitter, Link as LinkIcon } from 'lucide-react';
-import { Company, CompanyStatus, SocialLinks } from '../../types';
+import { X, Save, Building, Hash, Check, History, HardDrive, Globe, Linkedin, Instagram, Facebook, Twitter, Link as LinkIcon, User } from 'lucide-react';
+import { CRMEntry, CRMStatus, SocialLinks } from '../../types';
 import { getWorkTypeStyles } from '../../utils';
 
 interface CompaniesFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: Partial<Company>) => void;
-  initialData?: Company;
+  onSubmit: (data: Partial<CRMEntry>) => void;
+  initialData?: CRMEntry;
 }
 
 const WORK_TYPES = [
@@ -16,15 +16,17 @@ const WORK_TYPES = [
   "LinkedIn", "Other", "Ads", "Branding", "UI/UX"
 ];
 
-const STATUS_OPTIONS: { label: string; value: CompanyStatus }[] = [
-    { label: "Running", value: "running" },
-    { label: "Not Started", value: "not_started" },
+// Restricted statuses allowed for "Companies" view
+const STATUS_OPTIONS: { label: string; value: CRMStatus }[] = [
+    { label: "On Progress", value: "on progress" },
+    { label: "Onboarded", value: "onboarded" },
+    { label: "Quote Sent", value: "Quote Sent" },
     { label: "Completed", value: "completed" },
-    { label: "Discontinued", value: "discontinued" },
+    { label: "Dropped", value: "drop" },
 ];
 
 export const CompaniesForm: React.FC<CompaniesFormProps> = ({ isOpen, onClose, onSubmit, initialData }) => {
-  const [formData, setFormData] = useState<Partial<Company>>({});
+  const [formData, setFormData] = useState<Partial<CRMEntry>>({});
   
   useEffect(() => {
     if (isOpen) {
@@ -33,10 +35,12 @@ export const CompaniesForm: React.FC<CompaniesFormProps> = ({ isOpen, onClose, o
         } else {
             // Reset for Create Mode
             setFormData({
-                name: '',
+                company: '',
+                contactName: '',
+                // Default Reference ID logic - just visual here, backend handles logic or we send it
                 referenceId: `REF-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`,
                 work: [],
-                status: 'not_started',
+                status: 'on progress', // Default to 'on progress' instead of 'not_started'
                 driveLink: '',
                 socials: {}
             });
@@ -48,7 +52,7 @@ export const CompaniesForm: React.FC<CompaniesFormProps> = ({ isOpen, onClose, o
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.status) {
+    if (!formData.company || !formData.status) {
         alert("Please fill in required fields");
         return;
     }
@@ -104,6 +108,7 @@ export const CompaniesForm: React.FC<CompaniesFormProps> = ({ isOpen, onClose, o
                                 className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none bg-gray-50 font-mono text-sm" 
                                 value={formData.referenceId || ''} 
                                 onChange={e => setFormData({...formData, referenceId: e.target.value})}
+                                placeholder="Auto-generated"
                             />
                         </div>
                     </div>
@@ -116,18 +121,32 @@ export const CompaniesForm: React.FC<CompaniesFormProps> = ({ isOpen, onClose, o
                                 required 
                                 type="text" 
                                 className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none" 
-                                value={formData.name || ''} 
-                                onChange={e => setFormData({...formData, name: e.target.value})}
+                                value={formData.company || ''} 
+                                onChange={e => setFormData({...formData, company: e.target.value})}
                                 placeholder="e.g. Acme Corp"
                             />
                         </div>
                     </div>
                 </div>
 
+                <div className="w-full">
+                    <label className="block mb-1.5 text-sm font-medium text-gray-700">Contact Person</label>
+                    <div className="relative">
+                            <User className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                        <input 
+                            type="text" 
+                            className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none" 
+                            value={formData.contactName || ''} 
+                            onChange={e => setFormData({...formData, contactName: e.target.value})}
+                            placeholder="Primary Contact Name"
+                        />
+                    </div>
+                </div>
+
                 {/* Status */}
                 <div className="w-full">
                     <label className="block mb-1.5 text-sm font-medium text-gray-700">Status <span className="text-red-500">*</span></label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="flex flex-wrap gap-3">
                         {STATUS_OPTIONS.map(opt => (
                             <button
                                 key={opt.value}

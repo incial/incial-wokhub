@@ -1,14 +1,14 @@
 
 import React from 'react';
-import { Company } from '../../types';
+import { CRMEntry } from '../../types';
 import { getCompanyStatusStyles, getWorkTypeStyles } from '../../utils';
-import { Trash2, MoreHorizontal, Hash, User, Eye, HardDrive, Globe, Linkedin, Instagram, Facebook, Twitter, Link as LinkIcon } from 'lucide-react';
+import { Trash2, MoreHorizontal, Hash, User, Eye, HardDrive, Globe, Linkedin, Instagram, Facebook, Twitter, Link as LinkIcon, Edit2 } from 'lucide-react';
 
 interface CompaniesTableProps {
-  data: Company[];
+  data: CRMEntry[];
   isLoading: boolean;
-  onEdit: (company: Company) => void;
-  onView: (company: Company) => void;
+  onEdit: (company: CRMEntry) => void;
+  onView: (company: CRMEntry) => void;
   onDelete: (id: number) => void;
 }
 
@@ -29,7 +29,7 @@ export const CompaniesTable: React.FC<CompaniesTableProps> = ({ data, isLoading,
             <MoreHorizontal className="h-8 w-8 text-gray-300" />
         </div>
         <h3 className="text-gray-900 font-bold text-lg">No companies found</h3>
-        <p className="text-gray-500 mt-1">This section is populated from your CRM data.</p>
+        <p className="text-gray-500 mt-1">This section displays active onboarded deals from CRM.</p>
       </div>
     );
   }
@@ -49,7 +49,11 @@ export const CompaniesTable: React.FC<CompaniesTableProps> = ({ data, isLoading,
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-50">
-          {data.map((row, index) => (
+          {data.map((row, index) => {
+             // Generate a fallback Reference ID if missing
+             const refId = row.referenceId || `REF-${new Date().getFullYear()}-${row.id.toString().padStart(3, '0')}`;
+             
+             return (
             <tr key={row.id} className="group hover:bg-gray-50/80 transition-all duration-200">
               
               {/* SL No */}
@@ -61,7 +65,7 @@ export const CompaniesTable: React.FC<CompaniesTableProps> = ({ data, isLoading,
               <td className="px-6 py-4">
                  <span className="text-xs font-mono font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md border border-indigo-100 flex w-fit items-center gap-2">
                     <Hash className="h-3 w-3 opacity-50" />
-                    {row.referenceId}
+                    {refId}
                  </span>
               </td>
 
@@ -72,7 +76,7 @@ export const CompaniesTable: React.FC<CompaniesTableProps> = ({ data, isLoading,
                         onClick={() => onView(row)}
                         className="font-bold text-gray-900 text-sm hover:text-brand-600 hover:underline transition-colors text-left"
                     >
-                        {row.name}
+                        {row.company}
                     </button>
                     {/* Quick Links Row */}
                     <div className="flex items-center gap-2">
@@ -121,7 +125,7 @@ export const CompaniesTable: React.FC<CompaniesTableProps> = ({ data, isLoading,
                     <div className="h-6 w-6 rounded-full bg-gray-100 flex items-center justify-center">
                         <User className="h-3 w-3 text-gray-500" />
                     </div>
-                    <span className="text-sm font-medium text-gray-700">{row.contactPerson || 'N/A'}</span>
+                    <span className="text-sm font-medium text-gray-700">{row.contactName || 'N/A'}</span>
                   </div>
               </td>
 
@@ -159,6 +163,13 @@ export const CompaniesTable: React.FC<CompaniesTableProps> = ({ data, isLoading,
                         <Eye className="h-4 w-4" />
                     </button>
                     <button 
+                        onClick={() => onEdit(row)} 
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                        title="Edit Details"
+                    >
+                        <Edit2 className="h-4 w-4" />
+                    </button>
+                    <button 
                         onClick={() => onDelete(row.id)} 
                         className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
                         title="Remove from List"
@@ -168,7 +179,8 @@ export const CompaniesTable: React.FC<CompaniesTableProps> = ({ data, isLoading,
                 </div>
               </td>
             </tr>
-          ))}
+          );
+          })}
         </tbody>
       </table>
     </div>

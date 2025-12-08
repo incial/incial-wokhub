@@ -4,7 +4,7 @@ import { Navbar } from '../components/layout/Navbar';
 import { Sidebar } from '../components/layout/Sidebar';
 import { PieChart, BarChart, TrendingUp, AlertCircle, Lock, Download, FileText, CheckSquare, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { crmApi, companiesApi, tasksApi } from '../services/api';
+import { crmApi, tasksApi } from '../services/api';
 import { formatMoney } from '../utils';
 import { CRMEntry } from '../types';
 
@@ -33,7 +33,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ title }) => {
         loadData();
     }, [user]);
 
-    const handleExport = async (type: 'crm' | 'companies' | 'tasks') => {
+    const handleExport = async (type: 'crm' | 'tasks') => {
         if (!window.confirm(`Are you sure you want to export ${type.toUpperCase()} data to CSV?`)) return;
 
         try {
@@ -43,8 +43,6 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ title }) => {
             if (type === 'crm') {
                 const res = await crmApi.getAll();
                 data = res.crmList;
-            } else if (type === 'companies') {
-                data = await companiesApi.getAll();
             } else if (type === 'tasks') {
                 data = await tasksApi.getAll();
             }
@@ -174,7 +172,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ title }) => {
                         <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                             <FileText className="h-5 w-5 text-gray-500" /> Data Exports
                         </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             
                             <button 
                                 onClick={() => handleExport('crm')}
@@ -184,25 +182,9 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ title }) => {
                                     <Users className="h-5 w-5" />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-gray-900">Export CRM Data</h3>
-                                    <p className="text-xs text-gray-500 mt-1 mb-2">Download all leads and deal information to CSV.</p>
+                                    <h3 className="font-bold text-gray-900">Export All CRM Data</h3>
+                                    <p className="text-xs text-gray-500 mt-1 mb-2">Download all leads, deals, and company records to CSV.</p>
                                     <span className="text-xs font-semibold text-blue-600 flex items-center gap-1">
-                                        Download CSV <Download className="h-3 w-3" />
-                                    </span>
-                                </div>
-                            </button>
-
-                            <button 
-                                onClick={() => handleExport('companies')}
-                                className="group bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all text-left flex items-start gap-4"
-                            >
-                                <div className="h-10 w-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-purple-100 transition-colors">
-                                    <TrendingUp className="h-5 w-5" />
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-gray-900">Export Companies</h3>
-                                    <p className="text-xs text-gray-500 mt-1 mb-2">Download client registry and project statuses.</p>
-                                    <span className="text-xs font-semibold text-purple-600 flex items-center gap-1">
                                         Download CSV <Download className="h-3 w-3" />
                                     </span>
                                 </div>
@@ -224,16 +206,6 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ title }) => {
                                 </div>
                             </button>
 
-                        </div>
-                     </div>
-
-                     <div className="bg-white rounded-3xl border border-gray-100 p-12 text-center">
-                        <div className="max-w-md mx-auto">
-                            <div className="h-20 w-20 bg-brand-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                                <AlertCircle className="h-10 w-10 text-brand-500" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-2">Advanced Analytics Module</h3>
-                            <p className="text-gray-500">More detailed visualization charts and custom report builders are under development.</p>
                         </div>
                      </div>
                 </main>

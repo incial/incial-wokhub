@@ -27,10 +27,11 @@ export const CompaniesFilters: React.FC<CompaniesFiltersProps> = ({ filters, set
 
   const statusOptions = [
     { label: "All Statuses", value: "" },
-    { label: "Running", value: "running" },
-    { label: "Not Started", value: "not_started" },
+    { label: "Onboarded", value: "onboarded" },
+    { label: "On Progress", value: "on progress" },
+    { label: "Quote Sent", value: "Quote Sent" },
     { label: "Completed", value: "completed" },
-    { label: "Discontinued", value: "discontinued" },
+    { label: "Dropped", value: "drop" },
   ];
 
   const workOptions = [
