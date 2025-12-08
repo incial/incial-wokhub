@@ -9,6 +9,7 @@ import { LoginPage } from './pages/LoginPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { ClientTrackerPage } from './pages/ClientTrackerPage';
 import { ClientDetailsPage } from './pages/ClientDetailsPage';
+import { AdminPerformancePage } from './pages/AdminPerformancePage';
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
@@ -19,7 +20,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }
   return children;
 };
 
- //localStorage.clear();
+localStorage.clear();
 
 // Admin Only Route Wrapper
 const AdminRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
@@ -97,9 +98,9 @@ const AppRoutes = () => {
                     <AnalyticsPage title="Reports" />
                 </AdminRoute>
             } />
-            <Route path="/pipelines" element={
+             <Route path="/admin/performance" element={
                 <AdminRoute>
-                    <AnalyticsPage title="Pipeline Analytics" />
+                    <AdminPerformancePage />
                 </AdminRoute>
             } />
 
