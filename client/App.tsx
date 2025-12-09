@@ -12,6 +12,7 @@ import { ClientDetailsPage } from './pages/ClientDetailsPage';
 import { AdminPerformancePage } from './pages/AdminPerformancePage';
 import { MeetingTrackerPage } from './pages/MeetingTrackerPage';
 import { UniversalCalendarPage } from './pages/UniversalCalendarPage';
+import { MyDashboardPage } from './pages/MyDashboardPage';
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
@@ -29,28 +30,26 @@ const AdminRoute: React.FC<{ children: React.ReactElement }> = ({ children }) =>
       return <Navigate to="/login" replace />;
     }
     if (user?.role !== 'ROLE_ADMIN') {
-        // Redirect employees to Tasks if they try to access admin pages
-        return <Navigate to="/tasks" replace />;
+        // Redirect employees to their dashboard if they try to access admin pages
+        return <Navigate to="/dashboard" replace />;
     }
     return children;
 };
 
 // Public Route Wrapper (redirects to dashboard if logged in)
 const PublicRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
-    const { isAuthenticated, user } = useAuth();
+    const { isAuthenticated } = useAuth();
     if (isAuthenticated) {
-      const redirectTo = user?.role === 'ROLE_ADMIN' ? '/crm' : '/tasks';
-      return <Navigate to={redirectTo} replace />;
+      return <Navigate to="/dashboard" replace />;
     }
     return children;
 };
 
-// Helper for root redirect based on role
+// Helper for root redirect
 const RootRedirect: React.FC = () => {
-    const { isAuthenticated, user } = useAuth();
+    const { isAuthenticated } = useAuth();
     if (!isAuthenticated) return <Navigate to="/login" replace />;
-    const to = user?.role === 'ROLE_ADMIN' ? '/crm' : '/tasks';
-    return <Navigate to={to} replace />;
+    return <Navigate to="/dashboard" replace />;
 };
 
 const AppRoutes = () => {
@@ -62,7 +61,14 @@ const AppRoutes = () => {
                 </PublicRoute>
             } />
             
-            {/* CRM is now Admin Only */}
+            {/* Universal Landing Page */}
+            <Route path="/dashboard" element={
+                <ProtectedRoute>
+                    <MyDashboardPage />
+                </ProtectedRoute>
+            } />
+
+            {/* Admin Only CRM */}
             <Route path="/crm" element={
                 <AdminRoute>
                     <CRMPage />

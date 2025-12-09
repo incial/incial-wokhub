@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Users, Briefcase, Settings, PieChart, Layers, ChevronRight, CheckSquare, ListTodo, BarChart2, Calendar, CalendarDays } from 'lucide-react';
+import { Users, Briefcase, Settings, PieChart, Layers, ChevronRight, CheckSquare, ListTodo, BarChart2, Calendar, CalendarDays, LayoutDashboard } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
@@ -24,7 +24,7 @@ const NavItem = ({ icon: Icon, label, to, active }: { icon: any, label: string, 
 export const Sidebar: React.FC = () => {
     const location = useLocation();
     const { user } = useAuth();
-    const currentPath = location ? location.pathname : '/crm';
+    const currentPath = location ? location.pathname : '/dashboard';
     const isAdmin = user?.role === 'ROLE_ADMIN';
 
   return (
@@ -36,10 +36,11 @@ export const Sidebar: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto py-8">
+      <div className="flex-1 overflow-y-auto py-8 no-scrollbar">
         <div className="mb-8">
             <p className="px-7 text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Overview</p>
             <div className="space-y-1">
+                <NavItem icon={LayoutDashboard} label="My Dashboard" to="/dashboard" active={currentPath === '/dashboard'} />
                 {isAdmin && <NavItem icon={Users} label="CRM & Leads" to="/crm" active={currentPath === '/crm'} />}
                 <NavItem icon={CalendarDays} label="Universal Calendar" to="/calendar" active={currentPath === '/calendar'} />
                 <NavItem icon={CheckSquare} label="Tasks" to="/tasks" active={currentPath.startsWith('/tasks')} />

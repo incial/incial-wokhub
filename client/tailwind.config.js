@@ -4,13 +4,21 @@ tailwind.config = {
     extend: {
       colors: {
         brand: {
-          50: '#f9fafb', // More neutral for Incial
-          100: '#f3f4f6',
-          500: '#111827', // Black/Dark Gray for brand-500
-          600: '#000000', // Black for brand-600
-          700: '#374151',
-          900: '#111827',
+          50: '#eef2ff',
+          100: '#e0e7ff',
+          200: '#c7d2fe',
+          300: '#a5b4fc',
+          400: '#818cf8',
+          500: '#6366f1',
+          600: '#4f46e5',
+          700: '#4338ca',
+          800: '#3730a3',
+          900: '#312e81',
+          950: '#1e1b4b',
         }
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
       }
     }
   }
