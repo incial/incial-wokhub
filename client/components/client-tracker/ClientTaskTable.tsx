@@ -2,20 +2,21 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Task, TaskPriority, TaskStatus, TaskType } from '../../types';
 import { formatDate } from '../../utils';
-import { Edit2, Trash2, Paperclip, Check, ChevronDown, ExternalLink } from 'lucide-react';
+import { Edit2, Trash2, Paperclip, Check, ChevronDown, ExternalLink, Layout } from 'lucide-react';
 
 interface ClientTaskTableProps {
   tasks: Task[];
   onEdit: (task: Task) => void;
   onDelete: (id: number) => void;
   onStatusChange: (task: Task, newStatus: TaskStatus) => void;
+  onToggleVisibility: (task: Task) => void;
 }
 
 // --- Custom Status Badge & Dropdown ---
 const StatusDropdown = ({ task, onStatusChange }: { task: Task; onStatusChange: (t: Task, s: TaskStatus) => void }) => {
     const [isOpen, setIsOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
-    const options: TaskStatus[] = ['Not Started', 'In Progress', 'Done', 'Dropped'];
+    const options: TaskStatus[] = ['Not Started', 'In Progress', 'In Review', 'Posted', 'Done', 'Dropped'];
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -29,6 +30,8 @@ const StatusDropdown = ({ task, onStatusChange }: { task: Task; onStatusChange: 
         switch(status) {
             case 'Done': 
             case 'Completed': return 'bg-green-100 text-green-700 border-green-200';
+            case 'Posted': return 'bg-sky-100 text-sky-700 border-sky-200';
+            case 'In Review': return 'bg-purple-100 text-purple-700 border-purple-200';
             case 'Dropped': 
             case 'drop': return 'bg-red-100 text-red-700 border-red-200';
             case 'In Progress': return 'bg-blue-100 text-blue-700 border-blue-200';
@@ -48,7 +51,7 @@ const StatusDropdown = ({ task, onStatusChange }: { task: Task; onStatusChange: 
             </button>
             
             {isOpen && (
-                <div className="absolute top-full left-0 z-50 mt-1 w-32 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                <div className="absolute top-full left-0 z-50 mt-1 w-36 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
                     <div className="p-1">
                         {options.map(opt => (
                             <button
@@ -89,7 +92,7 @@ const TypeBadge = ({ type }: { type?: TaskType }) => {
     );
 };
 
-export const ClientTaskTable: React.FC<ClientTaskTableProps> = ({ tasks, onEdit, onDelete, onStatusChange }) => {
+export const ClientTaskTable: React.FC<ClientTaskTableProps> = ({ tasks, onEdit, onDelete, onStatusChange, onToggleVisibility }) => {
   return (
     <div className="overflow-x-auto min-h-[400px]">
         <table className="w-full text-left border-collapse whitespace-nowrap">
@@ -102,7 +105,7 @@ export const ClientTaskTable: React.FC<ClientTaskTableProps> = ({ tasks, onEdit,
                     <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider w-32">Due date</th>
                     <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider w-32">Priority</th>
                     <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-center w-20">Link</th>
-                    <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-right w-20">Actions</th>
+                    <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-right w-28">Actions</th>
                 </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -110,12 +113,24 @@ export const ClientTaskTable: React.FC<ClientTaskTableProps> = ({ tasks, onEdit,
                     <tr key={task.id} className="group hover:bg-gray-50/80 transition-all duration-200">
                         {/* Task Name */}
                         <td className="px-6 py-3 sticky left-0 bg-white group-hover:bg-gray-50/80 transition-all border-r border-transparent group-hover:border-gray-100 z-10">
-                            <button 
-                                onClick={() => onEdit(task)} 
-                                className="text-sm font-bold text-gray-900 hover:text-brand-600 hover:underline text-left truncate max-w-[200px]"
-                            >
-                                {task.title}
-                            </button>
+                             <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2">
+                                    <button 
+                                        onClick={() => onEdit(task)} 
+                                        className="text-sm font-bold text-gray-900 hover:text-brand-600 hover:underline text-left truncate max-w-[180px]"
+                                    >
+                                        {task.title}
+                                    </button>
+                                    {task.isVisibleOnMainBoard && (
+                                        <div className="flex-shrink-0" title="Visible on Main Dashboard">
+                                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100 shadow-sm">
+                                                <Layout className="h-3 w-3" />
+                                                <span className="hidden xl:inline">Main Board</span>
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </td>
 
                         {/* Status */}
@@ -169,6 +184,13 @@ export const ClientTaskTable: React.FC<ClientTaskTableProps> = ({ tasks, onEdit,
                         {/* Actions */}
                         <td className="px-6 py-3 text-right">
                              <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button 
+                                    onClick={() => onToggleVisibility(task)} 
+                                    className={`p-1.5 rounded-lg transition-colors ${task.isVisibleOnMainBoard ? 'text-indigo-600 bg-indigo-50' : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'}`} 
+                                    title={task.isVisibleOnMainBoard ? "Remove from Main Dashboard" : "Move to Main Dashboard"}
+                                >
+                                    <Layout className="h-4 w-4" />
+                                </button>
                                 <button onClick={() => onEdit(task)} className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors" title="Edit">
                                     <Edit2 className="h-4 w-4" />
                                 </button>

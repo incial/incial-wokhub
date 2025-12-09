@@ -1,4 +1,5 @@
 
+
 export type CRMStatus = 'onboarded' | 'drop' | 'on progress' | 'Quote Sent' | 'lead' | 'completed';
 
 export interface User {
@@ -64,7 +65,7 @@ export interface CompanyFilterState {
 
 // --- TASKS MODULE TYPES ---
 
-export type TaskStatus = 'Not Started' | 'In Progress' | 'Completed' | 'Dropped' | 'Done'; // Added Dropped/Done for Client Tracker
+export type TaskStatus = 'Not Started' | 'In Progress' | 'In Review' | 'Posted' | 'Completed' | 'Dropped' | 'Done'; // Added Dropped/Done for Client Tracker
 export type TaskPriority = 'Low' | 'Medium' | 'High';
 export type TaskType = 'General' | 'Reel' | 'Post' | 'Story' | 'Carousel' | 'Video'; // Added for Client Tracker
 
@@ -83,6 +84,7 @@ export interface Task {
   createdAt: string;
   lastUpdatedBy?: string;
   lastUpdatedAt?: string;
+  isVisibleOnMainBoard?: boolean; // Flag to show on main dashboard
 }
 
 export interface TaskFilterState {
@@ -90,4 +92,27 @@ export interface TaskFilterState {
   status: string;
   priority: string;
   assignedTo: string;
+}
+
+// --- MEETING MODULE TYPES ---
+export type MeetingStatus = 'Scheduled' | 'Completed' | 'Cancelled' | 'Postponed';
+
+export interface Meeting {
+  id: number;
+  title: string;
+  dateTime: string; // ISO string with time
+  status: MeetingStatus;
+  meetingLink?: string;
+  notes?: string;
+  companyId?: number; // Optional link to a client
+  assignedTo?: string;
+  createdAt: string;
+  lastUpdatedBy?: string;
+  lastUpdatedAt?: string;
+}
+
+export interface MeetingFilterState {
+  search: string;
+  status: string;
+  dateRangeStart: string;
 }

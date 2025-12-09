@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Save, Edit2, User, Phone, Mail, Calendar, Briefcase, FileText, Tag, DollarSign, CheckCircle, Clock, AlertCircle, History, ExternalLink, HardDrive, Linkedin, Instagram, Facebook, Twitter, Globe, Link as LinkIcon } from 'lucide-react';
+import { X, Save, Edit2, User, Phone, Mail, Calendar, Briefcase, FileText, Tag, DollarSign, CheckCircle, Clock, AlertCircle, History, ExternalLink, HardDrive, Linkedin, Instagram, Facebook, Twitter, Globe, Link as LinkIcon, Maximize2, Minimize2 } from 'lucide-react';
 import { CRMEntry, SocialLinks } from '../../types';
 import { getStatusStyles, formatDate, getFollowUpColor, formatMoney } from '../../utils';
 import { CustomDatePicker } from '../ui/CustomDatePicker';
@@ -54,6 +54,7 @@ const WORK_OPTIONS = [
 export const CRMForm: React.FC<CRMFormProps> = ({ isOpen, onClose, onSubmit, initialData }) => {
   const [formData, setFormData] = useState<Partial<CRMEntry>>({});
   const [mode, setMode] = useState<'view' | 'edit'>('edit');
+  const [isNotesExpanded, setIsNotesExpanded] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -339,9 +340,18 @@ export const CRMForm: React.FC<CRMFormProps> = ({ isOpen, onClose, onSubmit, ini
 
         {/* Common Notes Area */}
         <div className="bg-amber-50 rounded-xl border border-amber-100 p-5 shadow-sm">
-            <h3 className="text-sm font-bold text-amber-800 uppercase tracking-wide mb-2 flex items-center gap-2">
-                <FileText className="h-4 w-4" /> Notes
-            </h3>
+            <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-bold text-amber-800 uppercase tracking-wide flex items-center gap-2">
+                    <FileText className="h-4 w-4" /> Notes
+                </h3>
+                <button 
+                    type="button" 
+                    onClick={() => setIsNotesExpanded(true)}
+                    className="text-xs font-medium text-amber-700 hover:text-amber-900 flex items-center gap-1 hover:bg-amber-100 px-2 py-1 rounded transition-colors"
+                >
+                    <Maximize2 className="h-3 w-3" /> Expand
+                </button>
+            </div>
             <div className="prose prose-sm text-gray-800 max-w-none whitespace-pre-wrap">
                 {formData.notes || <span className="italic text-gray-400">No notes available.</span>}
             </div>
@@ -556,8 +566,17 @@ export const CRMForm: React.FC<CRMFormProps> = ({ isOpen, onClose, onSubmit, ini
         
         <div className="space-y-6 border-t border-gray-100 pt-6">
              <div className="w-full">
-                 <label className="block mb-1.5 text-sm font-medium text-gray-700">Common Notes</label>
-                 <textarea className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-brand-500 focus:outline-none h-32 text-gray-700 leading-relaxed shadow-sm"
+                 <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-sm font-medium text-gray-700">Common Notes</label>
+                    <button 
+                        type="button" 
+                        onClick={() => setIsNotesExpanded(true)}
+                        className="text-xs font-medium text-brand-600 hover:text-brand-700 flex items-center gap-1 hover:bg-brand-50 px-2 py-1 rounded transition-colors"
+                    >
+                        <Maximize2 className="h-3 w-3" /> Expand Editor
+                    </button>
+                 </div>
+                 <textarea className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-brand-500 focus:outline-none h-32 text-gray-700 leading-relaxed shadow-sm resize-none"
                     placeholder="Enter general notes about the deal here..."
                     value={formData.notes || ''} onChange={e => setFormData({...formData, notes: e.target.value})}
                  ></textarea>
@@ -619,44 +638,82 @@ export const CRMForm: React.FC<CRMFormProps> = ({ isOpen, onClose, onSubmit, ini
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-all">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] overflow-hidden flex flex-col">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-white z-10">
-          <h2 className="text-xl font-bold text-gray-800">
-            {initialData ? (isView ? 'Deal Overview' : 'Edit Deal') : 'Create New Deal'}
-          </h2>
-          <div className="flex items-center gap-2">
-            {isView && (
-                <button onClick={toggleEdit} className="px-4 py-2 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors">
-                    <Edit2 className="h-4 w-4" /> Edit Details
-                </button>
-            )}
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-full transition-colors">
-                <X className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Modal Content */}
-        <div className="overflow-y-auto p-6 flex-1 bg-white">
-            <form onSubmit={handleSubmit}>
-                {isView ? renderView() : renderEditForm()}
-                
-                {/* Footer Actions (Only for Edit Mode or to Close) */}
-                {!isView && (
-                    <div className="flex justify-end gap-3 pt-8 mt-4 border-t border-gray-100">
-                        <button type="button" onClick={handleCancel} className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium">
-                            Cancel
-                        </button>
-                        <button type="submit" className="px-5 py-2.5 text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors font-medium flex items-center gap-2 shadow-lg shadow-brand-500/30">
-                            <Save className="h-4 w-4" /> Save Changes
+    <>
+        {/* Expanded Notes Overlay */}
+        {isNotesExpanded && (
+            <div className="fixed inset-0 z-[60] bg-white flex flex-col animate-in fade-in duration-200">
+                <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50">
+                    <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-gray-500" /> 
+                        Common Notes {mode === 'edit' ? '(Editing)' : ''}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                        <button 
+                            type="button"
+                            onClick={() => setIsNotesExpanded(false)}
+                            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors"
+                        >
+                            <Minimize2 className="h-4 w-4" /> Done
                         </button>
                     </div>
+                </div>
+                <div className="flex-1 p-6 overflow-y-auto max-w-5xl mx-auto w-full">
+                    {mode === 'edit' ? (
+                        <textarea 
+                            className="w-full h-full p-4 text-base text-gray-800 bg-transparent border-none focus:ring-0 resize-none outline-none leading-relaxed"
+                            placeholder="Enter general notes about the deal here..."
+                            value={formData.notes || ''}
+                            onChange={e => setFormData({...formData, notes: e.target.value})}
+                            autoFocus
+                        />
+                    ) : (
+                        <div className="prose prose-lg max-w-none text-gray-800 whitespace-pre-wrap leading-relaxed">
+                            {formData.notes || <span className="text-gray-400 italic">No notes available.</span>}
+                        </div>
+                    )}
+                </div>
+            </div>
+        )}
+
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-all">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-white z-10">
+            <h2 className="text-xl font-bold text-gray-800">
+                {initialData ? (isView ? 'Deal Overview' : 'Edit Deal') : 'Create New Deal'}
+            </h2>
+            <div className="flex items-center gap-2">
+                {isView && (
+                    <button onClick={toggleEdit} className="px-4 py-2 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors">
+                        <Edit2 className="h-4 w-4" /> Edit Details
+                    </button>
                 )}
-            </form>
+                <button onClick={onClose} className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-full transition-colors">
+                    <X className="h-5 w-5" />
+                </button>
+            </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="overflow-y-auto p-6 flex-1 bg-white custom-scrollbar">
+                <form onSubmit={handleSubmit}>
+                    {isView ? renderView() : renderEditForm()}
+                    
+                    {/* Footer Actions (Only for Edit Mode or to Close) */}
+                    {!isView && (
+                        <div className="flex justify-end gap-3 pt-8 mt-4 border-t border-gray-100">
+                            <button type="button" onClick={handleCancel} className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium">
+                                Cancel
+                            </button>
+                            <button type="submit" className="px-5 py-2.5 text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors font-medium flex items-center gap-2 shadow-lg shadow-brand-500/30">
+                                <Save className="h-4 w-4" /> Save Changes
+                            </button>
+                        </div>
+                    )}
+                </form>
+            </div>
         </div>
-      </div>
-    </div>
+        </div>
+    </>
   );
 };

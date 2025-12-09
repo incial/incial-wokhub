@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Navbar } from '../components/layout/Navbar';
 import { Sidebar } from '../components/layout/Sidebar';
-import { tasksApi } from '../services/api';
+import { tasksApi, crmApi } from '../services/api';
 import { Task, TaskFilterState, TaskPriority, TaskStatus } from '../types';
 import { TasksTable } from '../components/tasks/TasksTable';
 import { TasksKanban } from '../components/tasks/TasksKanban';
@@ -10,7 +10,7 @@ import { TasksCalendar } from '../components/tasks/TasksCalendar';
 import { TasksFilter } from '../components/tasks/TasksFilter';
 import { TaskForm } from '../components/tasks/TaskForm';
 import { DeleteConfirmationModal } from '../components/ui/DeleteConfirmationModal';
-import { CheckSquare, Plus, LayoutList, Kanban, Calendar as CalendarIcon, User } from 'lucide-react';
+import { CheckSquare, Plus, LayoutList, Kanban, Calendar as CalendarIcon, User, Archive, ChevronDown, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 type ViewMode = 'list' | 'kanban' | 'calendar' | 'mine';
@@ -18,10 +18,14 @@ type ViewMode = 'list' | 'kanban' | 'calendar' | 'mine';
 export const TasksPage: React.FC = () => {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [companyMap, setCompanyMap] = useState<Record<number, string>>({});
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // UI State
+  const [isCompletedExpanded, setIsCompletedExpanded] = useState(false);
 
   // Delete State
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -36,10 +40,22 @@ export const TasksPage: React.FC = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const data = await tasksApi.getAll();
-      setTasks(data);
+      const [tasksData, crmData] = await Promise.all([
+          tasksApi.getAll(),
+          crmApi.getAll()
+      ]);
+      
+      setTasks(tasksData);
+      
+      // Build Company Map
+      const map: Record<number, string> = {};
+      crmData.crmList.forEach(c => {
+          map[c.id] = c.company;
+      });
+      setCompanyMap(map);
+
       // Mock Persistence
-      localStorage.setItem('mock_tasks_data', JSON.stringify(data));
+      localStorage.setItem('mock_tasks_data', JSON.stringify(tasksData));
     } catch (err) {
       console.error(err);
     } finally {
@@ -53,6 +69,12 @@ export const TasksPage: React.FC = () => {
 
   const filteredTasks = useMemo(() => {
     let result = tasks.filter(t => {
+      // 1. Core Visibility Logic:
+      // Show if it's an internal task (no companyId) OR if it's explicitly pinned to Main Board
+      const isVisible = !t.companyId || t.isVisibleOnMainBoard;
+      
+      if (!isVisible) return false;
+
       const matchesSearch = t.title.toLowerCase().includes(filters.search.toLowerCase());
       const matchesStatus = filters.status === '' || t.status === filters.status;
       const matchesPriority = filters.priority === '' || t.priority === filters.priority;
@@ -67,6 +89,18 @@ export const TasksPage: React.FC = () => {
 
     return result;
   }, [tasks, filters, viewMode, user]);
+
+  // Split Active and Completed
+  const { activeTasks, completedTasks } = useMemo(() => {
+    const active = filteredTasks.filter(t => t.status !== 'Completed' && t.status !== 'Done');
+    const completed = filteredTasks.filter(t => t.status === 'Completed' || t.status === 'Done');
+    
+    // Sort active by priority/date, sort completed by recent update
+    active.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    completed.sort((a, b) => new Date(b.lastUpdatedAt || b.createdAt).getTime() - new Date(a.lastUpdatedAt || a.createdAt).getTime());
+
+    return { activeTasks: active, completedTasks: completed };
+  }, [filteredTasks]);
 
   // CRUD
   const handleCreate = () => {
@@ -219,13 +253,46 @@ export const TasksPage: React.FC = () => {
                 ) : (
                     <>
                         {(viewMode === 'list' || viewMode === 'mine') && (
-                            <TasksTable 
-                                data={filteredTasks} 
-                                onEdit={handleEdit} 
-                                onDelete={handleRequestDelete}
-                                onStatusChange={handleStatusChange}
-                                onPriorityChange={handlePriorityChange}
-                            />
+                            <div>
+                                {/* Active Tasks Section */}
+                                <TasksTable 
+                                    data={activeTasks} 
+                                    companyMap={companyMap}
+                                    onEdit={handleEdit} 
+                                    onDelete={handleRequestDelete}
+                                    onStatusChange={handleStatusChange}
+                                    onPriorityChange={handlePriorityChange}
+                                />
+                                
+                                {/* Completed Tasks Section */}
+                                {completedTasks.length > 0 && (
+                                    <div className="border-t border-gray-100">
+                                        <button 
+                                            onClick={() => setIsCompletedExpanded(!isCompletedExpanded)}
+                                            className="w-full flex items-center gap-2 p-4 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+                                        >
+                                            {isCompletedExpanded ? <ChevronDown className="h-4 w-4 text-gray-400" /> : <ChevronRight className="h-4 w-4 text-gray-400" />}
+                                            <Archive className="h-4 w-4 text-gray-500" />
+                                            <span className="text-sm font-bold text-gray-600 uppercase tracking-wide">
+                                                Completed Archives ({completedTasks.length})
+                                            </span>
+                                        </button>
+                                        
+                                        {isCompletedExpanded && (
+                                            <div className="bg-gray-50/30 opacity-75">
+                                                 <TasksTable 
+                                                    data={completedTasks} 
+                                                    companyMap={companyMap}
+                                                    onEdit={handleEdit} 
+                                                    onDelete={handleRequestDelete}
+                                                    onStatusChange={handleStatusChange}
+                                                    onPriorityChange={handlePriorityChange}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         )}
                         {viewMode === 'kanban' && (
                             <div className="h-full p-6 bg-gray-50/30">
@@ -246,7 +313,8 @@ export const TasksPage: React.FC = () => {
             </div>
             
             <div className="p-3 border-t border-gray-50 bg-white text-xs font-medium text-gray-400 flex justify-between">
-                <span>{filteredTasks.length} tasks visible</span>
+                <span>{activeTasks.length} active · {completedTasks.length} completed</span>
+                <span>Sorted by Priority & Date</span>
             </div>
           </div>
         </main>
@@ -257,6 +325,7 @@ export const TasksPage: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleSave}
         initialData={editingTask}
+        companyMap={companyMap}
       />
 
       <DeleteConfirmationModal 
