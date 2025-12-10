@@ -10,7 +10,22 @@ interface ClientTaskTableProps {
   onDelete: (id: number) => void;
   onStatusChange: (task: Task, newStatus: TaskStatus) => void;
   onToggleVisibility: (task: Task) => void;
+  readOnly?: boolean; // New prop for Client Portal
 }
+
+// Helper to get consistent styles
+const getStatusStyles = (status: string) => {
+    switch(status) {
+        case 'Done': 
+        case 'Completed': return 'bg-green-100 text-green-700 border-green-200';
+        case 'Posted': return 'bg-sky-100 text-sky-700 border-sky-200';
+        case 'In Review': return 'bg-purple-100 text-purple-700 border-purple-200';
+        case 'Dropped': 
+        case 'drop': return 'bg-red-100 text-red-700 border-red-200';
+        case 'In Progress': return 'bg-blue-100 text-blue-700 border-blue-200';
+        default: return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+};
 
 // --- Custom Status Badge & Dropdown ---
 const StatusDropdown = ({ task, onStatusChange }: { task: Task; onStatusChange: (t: Task, s: TaskStatus) => void }) => {
@@ -26,24 +41,11 @@ const StatusDropdown = ({ task, onStatusChange }: { task: Task; onStatusChange: 
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const getStyles = (status: string) => {
-        switch(status) {
-            case 'Done': 
-            case 'Completed': return 'bg-green-100 text-green-700 border-green-200';
-            case 'Posted': return 'bg-sky-100 text-sky-700 border-sky-200';
-            case 'In Review': return 'bg-purple-100 text-purple-700 border-purple-200';
-            case 'Dropped': 
-            case 'drop': return 'bg-red-100 text-red-700 border-red-200';
-            case 'In Progress': return 'bg-blue-100 text-blue-700 border-blue-200';
-            default: return 'bg-gray-100 text-gray-700 border-gray-200';
-        }
-    };
-
     return (
         <div className="relative inline-block" ref={ref}>
             <button 
                 onClick={() => setIsOpen(!isOpen)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border shadow-sm transition-all hover:opacity-90 hover:shadow-md active:scale-95 whitespace-nowrap ${getStyles(task.status)}`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border shadow-sm transition-all hover:opacity-90 hover:shadow-md active:scale-95 whitespace-nowrap ${getStatusStyles(task.status)}`}
             >
                 <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
                 {task.status === 'drop' as any ? 'Dropped' : task.status}
@@ -92,7 +94,7 @@ const TypeBadge = ({ type }: { type?: TaskType }) => {
     );
 };
 
-export const ClientTaskTable: React.FC<ClientTaskTableProps> = ({ tasks, onEdit, onDelete, onStatusChange, onToggleVisibility }) => {
+export const ClientTaskTable: React.FC<ClientTaskTableProps> = ({ tasks, onEdit, onDelete, onStatusChange, onToggleVisibility, readOnly = false }) => {
   return (
     <div className="overflow-x-auto min-h-[400px]">
         <table className="w-full text-left border-collapse whitespace-nowrap">
@@ -116,12 +118,12 @@ export const ClientTaskTable: React.FC<ClientTaskTableProps> = ({ tasks, onEdit,
                              <div className="flex flex-col gap-1">
                                 <div className="flex items-center gap-2">
                                     <button 
-                                        onClick={() => onEdit(task)} 
-                                        className="text-sm font-bold text-gray-900 hover:text-brand-600 hover:underline text-left truncate max-w-[180px]"
+                                        onClick={() => !readOnly && onEdit(task)} 
+                                        className={`text-sm font-bold text-gray-900 text-left truncate max-w-[180px] ${!readOnly ? 'hover:text-brand-600 hover:underline' : 'cursor-default'}`}
                                     >
                                         {task.title}
                                     </button>
-                                    {task.isVisibleOnMainBoard && (
+                                    {task.isVisibleOnMainBoard && !readOnly && (
                                         <div className="flex-shrink-0" title="Visible on Main Dashboard">
                                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100 shadow-sm">
                                                 <Layout className="h-3 w-3" />
@@ -135,7 +137,14 @@ export const ClientTaskTable: React.FC<ClientTaskTableProps> = ({ tasks, onEdit,
 
                         {/* Status */}
                         <td className="px-6 py-3">
-                            <StatusDropdown task={task} onStatusChange={onStatusChange} />
+                            {readOnly ? (
+                                <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border shadow-sm w-fit ${getStatusStyles(task.status)}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                                    {task.status === 'drop' as any ? 'Dropped' : task.status}
+                                </span>
+                            ) : (
+                                <StatusDropdown task={task} onStatusChange={onStatusChange} />
+                            )}
                         </td>
 
                         {/* Assign */}
@@ -183,21 +192,23 @@ export const ClientTaskTable: React.FC<ClientTaskTableProps> = ({ tasks, onEdit,
 
                         {/* Actions */}
                         <td className="px-6 py-3 text-right">
-                             <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button 
-                                    onClick={() => onToggleVisibility(task)} 
-                                    className={`p-1.5 rounded-lg transition-colors ${task.isVisibleOnMainBoard ? 'text-indigo-600 bg-indigo-50' : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'}`} 
-                                    title={task.isVisibleOnMainBoard ? "Remove from Main Dashboard" : "Move to Main Dashboard"}
-                                >
-                                    <Layout className="h-4 w-4" />
-                                </button>
-                                <button onClick={() => onEdit(task)} className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors" title="Edit">
-                                    <Edit2 className="h-4 w-4" />
-                                </button>
-                                <button onClick={() => onDelete(task.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
-                                    <Trash2 className="h-4 w-4" />
-                                </button>
-                             </div>
+                             {!readOnly && (
+                                 <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button 
+                                        onClick={() => onToggleVisibility(task)} 
+                                        className={`p-1.5 rounded-lg transition-colors ${task.isVisibleOnMainBoard ? 'text-indigo-600 bg-indigo-50' : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'}`} 
+                                        title={task.isVisibleOnMainBoard ? "Remove from Main Dashboard" : "Move to Main Dashboard"}
+                                    >
+                                        <Layout className="h-4 w-4" />
+                                    </button>
+                                    <button onClick={() => onEdit(task)} className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors" title="Edit">
+                                        <Edit2 className="h-4 w-4" />
+                                    </button>
+                                    <button onClick={() => onDelete(task.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                 </div>
+                             )}
                         </td>
                     </tr>
                 ))}

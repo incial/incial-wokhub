@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Navbar } from '../components/layout/Navbar';
 import { Sidebar } from '../components/layout/Sidebar';
@@ -223,14 +222,13 @@ export const ClientPortalPage: React.FC = () => {
                                 <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide">Active Queue ({activeTasks.length})</h3>
                              </div>
                              
-                             {/* Client Read-Only Table Logic via pointer-events-none on actions if strictly needed, 
-                                 but reusing component is fine as handlers are no-ops */}
                              <ClientTaskTable 
                                 tasks={activeTasks} 
                                 onEdit={handleEdit} 
                                 onDelete={handleDelete} 
                                 onStatusChange={handleStatusChange}
                                 onToggleVisibility={handleToggleVisibility}
+                                readOnly={true} // Clients cannot edit
                             />
 
                             {/* Completed Section */}
@@ -257,6 +255,7 @@ export const ClientPortalPage: React.FC = () => {
                                                 onDelete={handleDelete} 
                                                 onStatusChange={handleStatusChange}
                                                 onToggleVisibility={handleToggleVisibility}
+                                                readOnly={true} // Clients cannot edit
                                             />
                                         </div>
                                     )}
@@ -272,6 +271,7 @@ export const ClientPortalPage: React.FC = () => {
                                 tasks={filteredBaseTasks} 
                                 onEdit={handleEdit} 
                                 onStatusChange={handleStatusChange} 
+                                readOnly={true} // Disable dragging for clients
                             />
                         </div>
                     )}

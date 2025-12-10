@@ -9,6 +9,7 @@ interface TasksKanbanProps {
   tasks: Task[];
   onEdit: (task: Task) => void;
   onStatusChange: (task: Task, newStatus: TaskStatus) => void;
+  readOnly?: boolean; // New prop
 }
 
 const KanbanColumn = ({ 
@@ -17,20 +18,25 @@ const KanbanColumn = ({
     tasks, 
     color,
     onEdit,
-    onDrop
+    onDrop,
+    readOnly
 }: { 
     title: string, 
     status: TaskStatus, 
     tasks: Task[], 
     color: string,
     onEdit: (t: Task) => void,
-    onDrop: (taskId: number, newStatus: TaskStatus) => void
+    onDrop: (taskId: number, newStatus: TaskStatus) => void,
+    readOnly?: boolean
 }) => {
     const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
+        if (!readOnly) {
+            e.preventDefault();
+        }
     };
 
     const handleDrop = (e: React.DragEvent) => {
+        if (readOnly) return;
         e.preventDefault();
         const taskId = e.dataTransfer.getData("taskId");
         if (taskId) {
@@ -50,30 +56,36 @@ const KanbanColumn = ({
                     <h3 className="font-bold text-gray-700 text-sm">{title}</h3>
                     <span className="text-xs text-gray-400 font-medium ml-1">{tasks.length}</span>
                 </div>
-                <button className="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-100">
-                    <Plus className="h-4 w-4" />
-                </button>
+                {!readOnly && (
+                    <button className="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-100">
+                        <Plus className="h-4 w-4" />
+                    </button>
+                )}
             </div>
 
             <div className="space-y-3 flex-1 overflow-y-auto pr-1 pb-10 custom-scrollbar">
                 {tasks.map(task => (
                     <div 
                         key={task.id}
-                        draggable
+                        draggable={!readOnly}
                         onDragStart={(e) => {
-                            e.dataTransfer.setData("taskId", task.id.toString());
-                            e.dataTransfer.effectAllowed = "move";
+                            if (!readOnly) {
+                                e.dataTransfer.setData("taskId", task.id.toString());
+                                e.dataTransfer.effectAllowed = "move";
+                            }
                         }}
-                        onClick={() => onEdit(task)}
-                        className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer group active:cursor-grabbing"
+                        onClick={() => !readOnly && onEdit(task)}
+                        className={`bg-white p-4 rounded-xl border border-gray-100 shadow-sm transition-all group ${!readOnly ? 'hover:shadow-md cursor-pointer active:cursor-grabbing' : 'cursor-default'}`}
                     >
                         <div className="flex items-start justify-between mb-2">
                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${getTaskPriorityStyles(task.priority)}`}>
                                 {task.priority}
                             </span>
-                            <button className="text-gray-300 hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <MoreHorizontal className="h-4 w-4" />
-                            </button>
+                            {!readOnly && (
+                                <button className="text-gray-300 hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </button>
+                            )}
                         </div>
                         <h4 className="text-sm font-semibold text-gray-800 mb-1 leading-snug">{task.title}</h4>
                         {task.description && (
@@ -97,7 +109,7 @@ const KanbanColumn = ({
     );
 };
 
-export const TasksKanban: React.FC<TasksKanbanProps> = ({ tasks, onEdit, onStatusChange }) => {
+export const TasksKanban: React.FC<TasksKanbanProps> = ({ tasks, onEdit, onStatusChange, readOnly = false }) => {
     
     const handleDrop = (taskId: number, newStatus: TaskStatus) => {
         const task = tasks.find(t => t.id === taskId);
@@ -115,6 +127,7 @@ export const TasksKanban: React.FC<TasksKanbanProps> = ({ tasks, onEdit, onStatu
                 tasks={tasks.filter(t => t.status === 'Not Started')} 
                 onEdit={onEdit}
                 onDrop={handleDrop}
+                readOnly={readOnly}
             />
             <KanbanColumn 
                 title="In Progress" 
@@ -123,6 +136,7 @@ export const TasksKanban: React.FC<TasksKanbanProps> = ({ tasks, onEdit, onStatu
                 tasks={tasks.filter(t => t.status === 'In Progress')} 
                 onEdit={onEdit}
                 onDrop={handleDrop}
+                readOnly={readOnly}
             />
             <KanbanColumn 
                 title="In Review" 
@@ -131,6 +145,7 @@ export const TasksKanban: React.FC<TasksKanbanProps> = ({ tasks, onEdit, onStatu
                 tasks={tasks.filter(t => t.status === 'In Review')} 
                 onEdit={onEdit}
                 onDrop={handleDrop}
+                readOnly={readOnly}
             />
             <KanbanColumn 
                 title="Posted" 
@@ -139,6 +154,7 @@ export const TasksKanban: React.FC<TasksKanbanProps> = ({ tasks, onEdit, onStatu
                 tasks={tasks.filter(t => t.status === 'Posted')} 
                 onEdit={onEdit}
                 onDrop={handleDrop}
+                readOnly={readOnly}
             />
             <KanbanColumn 
                 title="Completed" 
@@ -147,6 +163,7 @@ export const TasksKanban: React.FC<TasksKanbanProps> = ({ tasks, onEdit, onStatu
                 tasks={tasks.filter(t => t.status === 'Completed' || t.status === 'Done')} 
                 onEdit={onEdit}
                 onDrop={handleDrop}
+                readOnly={readOnly}
             />
         </div>
     );

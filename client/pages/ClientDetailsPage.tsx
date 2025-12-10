@@ -314,6 +314,7 @@ export const ClientDetailsPage: React.FC = () => {
                                 onDelete={(id) => setDeleteId(id)} 
                                 onStatusChange={handleStatusChange}
                                 onToggleVisibility={handleToggleVisibility}
+                                readOnly={false} // Admins can edit
                             />
 
                             {/* Completed Section */}
@@ -340,6 +341,7 @@ export const ClientDetailsPage: React.FC = () => {
                                                 onDelete={(id) => setDeleteId(id)} 
                                                 onStatusChange={handleStatusChange}
                                                 onToggleVisibility={handleToggleVisibility}
+                                                readOnly={false} // Admins can edit
                                             />
                                         </div>
                                     )}
@@ -355,6 +357,7 @@ export const ClientDetailsPage: React.FC = () => {
                                 tasks={filteredBaseTasks} 
                                 onEdit={handleEdit} 
                                 onStatusChange={handleStatusChange} 
+                                readOnly={false} // Admins can drag
                             />
                         </div>
                     )}

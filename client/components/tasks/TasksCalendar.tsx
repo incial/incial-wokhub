@@ -31,8 +31,14 @@ export const TasksCalendar: React.FC<TasksCalendarProps> = ({ tasks, onEdit }) =
         // Days
         for (let day = 1; day <= totalDays; day++) {
             const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            
+            // Filter by string comparison (both are YYYY-MM-DD)
             const dayTasks = tasks.filter(t => t.dueDate === dateStr);
-            const isToday = new Date().toISOString().split('T')[0] === dateStr;
+            
+            // Check today using local time string
+            const today = new Date();
+            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            const isToday = todayStr === dateStr;
 
             cells.push(
                 <div key={day} className={`border-b border-r border-gray-100 min-h-[100px] p-2 hover:bg-gray-50 transition-colors group ${isToday ? 'bg-blue-50/30' : ''}`}>

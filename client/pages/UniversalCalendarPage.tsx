@@ -11,7 +11,8 @@ import { useAuth } from '../context/AuthContext';
 
 type CalendarItem = {
     id: string; // Composite ID
-    date: Date;
+    dateStr: string; // YYYY-MM-DD (Local) for grouping
+    sortTime: number; // For sorting within day
     title: string;
     type: 'task' | 'meeting';
     data: Task | Meeting;
@@ -36,7 +37,7 @@ export const UniversalCalendarPage: React.FC = () => {
     const [showMeetings, setShowMeetings] = useState(true);
 
     // Interaction States
-    const [selectedDate, setSelectedDate] = useState<Date | null>(null); // For Agenda Drawer
+    const [selectedDateStr, setSelectedDateStr] = useState<string | null>(null); // YYYY-MM-DD
     const [popover, setPopover] = useState<PopoverState | null>(null);
 
     // Modal States
@@ -65,9 +66,12 @@ export const UniversalCalendarPage: React.FC = () => {
             // Process Tasks
             tasksData.forEach(t => {
                 if (t.status !== 'Completed' && t.status !== 'Done') { 
+                    // Task dueDate is YYYY-MM-DD string. Use it directly.
+                    // Set sort time to 0 (all day / start of day)
                     allItems.push({
                         id: `task-${t.id}`,
-                        date: new Date(t.dueDate),
+                        dateStr: t.dueDate,
+                        sortTime: 0,
                         title: t.title,
                         type: 'task',
                         data: t,
@@ -78,9 +82,14 @@ export const UniversalCalendarPage: React.FC = () => {
 
             // Process Meetings
             meetingsData.forEach(m => {
+                // Meeting dateTime is ISO. We need to extract local YYYY-MM-DD.
+                const mDate = new Date(m.dateTime);
+                const localDateStr = `${mDate.getFullYear()}-${String(mDate.getMonth() + 1).padStart(2, '0')}-${String(mDate.getDate()).padStart(2, '0')}`;
+                
                 allItems.push({
                     id: `meeting-${m.id}`,
-                    date: new Date(m.dateTime),
+                    dateStr: localDateStr,
+                    sortTime: mDate.getTime(),
                     title: m.title,
                     type: 'meeting',
                     data: m,
@@ -120,8 +129,7 @@ export const UniversalCalendarPage: React.FC = () => {
         setPopover(null);
     };
 
-    const handleCreateTaskForDate = (date: Date) => {
-        const dateStr = date.toISOString().split('T')[0];
+    const handleCreateTaskForDate = (dateStr: string) => {
         setEditingTask({ 
             title: '', 
             status: 'Not Started', 
@@ -132,19 +140,22 @@ export const UniversalCalendarPage: React.FC = () => {
         setIsTaskModalOpen(true);
     };
 
-    const handleCreateMeetingForDate = (date: Date) => {
-        // Set time to current time but on selected date
-        const now = new Date();
-        const meetingDate = new Date(date);
-        meetingDate.setHours(now.getHours() + 1, 0, 0, 0);
+    const handleCreateMeetingForDate = (dateStr: string) => {
+        // Parse dateStr to get local date
+        const [y, m, d] = dateStr.split('-').map(Number);
+        const date = new Date(y, m - 1, d);
         
-        // Adjust for timezone offset for input[type="datetime-local"]
-        meetingDate.setMinutes(meetingDate.getMinutes() - meetingDate.getTimezoneOffset());
+        // Set time to current hour + 1
+        const now = new Date();
+        date.setHours(now.getHours() + 1, 0, 0, 0);
+        
+        // Format for datetime-local: YYYY-MM-DDThh:mm
+        const formatted = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:00`;
 
         setEditingMeeting({
             title: '',
             status: 'Scheduled',
-            dateTime: meetingDate.toISOString().slice(0, 16)
+            dateTime: formatted
         } as Meeting);
         setIsMeetingModalOpen(true);
     };
@@ -211,31 +222,27 @@ export const UniversalCalendarPage: React.FC = () => {
             cells.push(<div key={`empty-${i}`} className="bg-gray-50/20 border-b border-r border-gray-100 min-h-[140px]" />);
         }
 
+        const today = new Date();
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
         // Days
         for (let day = 1; day <= totalDays; day++) {
-            const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
             const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             
             const dayItems = items.filter(item => {
-                const itemDateStr = item.date.toISOString().split('T')[0];
                 const matchesType = (item.type === 'task' && showTasks) || (item.type === 'meeting' && showMeetings);
-                return itemDateStr === dateStr && matchesType;
+                return item.dateStr === dateStr && matchesType;
             });
 
-            dayItems.sort((a, b) => {
-                if (a.type === 'meeting' && b.type === 'meeting') return a.date.getTime() - b.date.getTime();
-                if (a.type === 'meeting') return -1;
-                if (b.type === 'meeting') return 1;
-                return 0;
-            });
+            dayItems.sort((a, b) => a.sortTime - b.sortTime);
 
-            const isToday = new Date().toISOString().split('T')[0] === dateStr;
-            const isSelected = selectedDate?.toISOString().split('T')[0] === dateStr;
+            const isToday = todayStr === dateStr;
+            const isSelected = selectedDateStr === dateStr;
 
             cells.push(
                 <div 
                     key={day} 
-                    onClick={() => setSelectedDate(dateObj)}
+                    onClick={() => setSelectedDateStr(dateStr)}
                     className={`border-b border-r border-gray-100 min-h-[140px] p-2 transition-colors group cursor-pointer relative ${
                         isToday ? 'bg-indigo-50/30' : isSelected ? 'bg-brand-50' : 'hover:bg-gray-50'
                     }`}
@@ -268,7 +275,7 @@ export const UniversalCalendarPage: React.FC = () => {
                                     {item.type === 'meeting' && (
                                         <div className="text-[9px] opacity-70 font-medium flex items-center gap-1">
                                             <Clock className="h-2.5 w-2.5" />
-                                            {item.date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                            {new Date((item.data as Meeting).dateTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                         </div>
                                     )}
                                 </div>
@@ -284,15 +291,19 @@ export const UniversalCalendarPage: React.FC = () => {
 
     // Helper to get items for agenda view
     const getAgendaItems = () => {
-        if (!selectedDate) return [];
-        const dateStr = selectedDate.toISOString().split('T')[0];
-        return items.filter(i => i.date.toISOString().split('T')[0] === dateStr).sort((a, b) => {
-             // Sort meetings by time, tasks put at specific time or top
-             if(a.type === 'meeting' && b.type === 'meeting') return a.date.getTime() - b.date.getTime();
-             if(a.type === 'meeting') return 1; // Meetings at bottom typically or specific time
-             if(b.type === 'meeting') return -1;
-             return 0;
-        });
+        if (!selectedDateStr) return [];
+        return items.filter(i => i.dateStr === selectedDateStr).sort((a, b) => a.sortTime - b.sortTime);
+    };
+
+    // Helper to get day name for agenda
+    const getSelectedDateDisplay = () => {
+        if (!selectedDateStr) return { weekday: '', full: '' };
+        const [y, m, d] = selectedDateStr.split('-').map(Number);
+        const date = new Date(y, m - 1, d);
+        return {
+            weekday: date.toLocaleDateString('en-US', { weekday: 'long' }),
+            full: date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+        };
     };
 
     return (
@@ -360,10 +371,10 @@ export const UniversalCalendarPage: React.FC = () => {
                 </main>
 
                 {/* Day Agenda Drawer */}
-                {selectedDate && (
+                {selectedDateStr && (
                     <div 
                         className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-sm transition-opacity"
-                        onClick={() => setSelectedDate(null)}
+                        onClick={() => setSelectedDateStr(null)}
                     >
                         <div 
                             className="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300"
@@ -372,11 +383,11 @@ export const UniversalCalendarPage: React.FC = () => {
                             {/* Drawer Header */}
                             <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex justify-between items-start">
                                 <div>
-                                    <h2 className="text-2xl font-bold text-gray-900">{selectedDate.toLocaleDateString('en-US', { weekday: 'long' })}</h2>
-                                    <p className="text-gray-500 font-medium">{selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                                    <h2 className="text-2xl font-bold text-gray-900">{getSelectedDateDisplay().weekday}</h2>
+                                    <p className="text-gray-500 font-medium">{getSelectedDateDisplay().full}</p>
                                 </div>
                                 <button 
-                                    onClick={() => setSelectedDate(null)} 
+                                    onClick={() => setSelectedDateStr(null)} 
                                     className="p-2 hover:bg-gray-200 rounded-full text-gray-500 transition-colors"
                                 >
                                     <X className="h-5 w-5" />
@@ -386,13 +397,13 @@ export const UniversalCalendarPage: React.FC = () => {
                             {/* Quick Actions */}
                             <div className="p-4 grid grid-cols-2 gap-3 border-b border-gray-100">
                                 <button 
-                                    onClick={() => handleCreateTaskForDate(selectedDate)}
+                                    onClick={() => handleCreateTaskForDate(selectedDateStr)}
                                     className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-50 text-blue-700 font-bold text-sm hover:bg-blue-100 transition-colors"
                                 >
                                     <CheckSquare className="h-4 w-4" /> Add Task
                                 </button>
                                 <button 
-                                    onClick={() => handleCreateMeetingForDate(selectedDate)}
+                                    onClick={() => handleCreateMeetingForDate(selectedDateStr)}
                                     className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-purple-50 text-purple-700 font-bold text-sm hover:bg-purple-100 transition-colors"
                                 >
                                     <Video className="h-4 w-4" /> Schedule Call
@@ -414,7 +425,7 @@ export const UniversalCalendarPage: React.FC = () => {
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wide">
                                                         {item.type === 'meeting' 
-                                                            ? item.date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                                                            ? new Date((item.data as Meeting).dateTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
                                                             : 'All Day'
                                                         }
                                                     </span>
@@ -461,7 +472,7 @@ export const UniversalCalendarPage: React.FC = () => {
                 )}
 
                 {/* Inline Tooltip / Popover (Only shows if popover state is set AND no drawer open) */}
-                {popover && !selectedDate && (
+                {popover && !selectedDateStr && (
                     <div 
                         className="fixed z-[100] bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 w-80 animate-in fade-in zoom-in-95 duration-200"
                         style={{ left: popover.x, top: popover.y }}
@@ -499,10 +510,10 @@ export const UniversalCalendarPage: React.FC = () => {
                             <div className="flex items-center gap-2.5 text-xs text-gray-600">
                                 <Clock className="h-4 w-4 text-gray-400" />
                                 <span className="font-semibold">
-                                    {popover.item.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                                    {popover.item.dateStr}
                                 </span>
                                 {popover.item.type === 'meeting' && (
-                                    <span className="text-gray-400">• {popover.item.date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                    <span className="text-gray-400">• {new Date((popover.item.data as Meeting).dateTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                 )}
                             </div>
                             
