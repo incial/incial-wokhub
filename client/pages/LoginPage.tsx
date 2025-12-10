@@ -2,13 +2,11 @@
 import React, { useState } from 'react';
 import { authApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { Mail, Lock, ArrowRight, CheckCircle, Shield, User, Eye, EyeOff, Crown, Briefcase } from 'lucide-react';
-
-type DemoRole = 'super' | 'admin' | 'employee' | 'client';
+import { Mail, Lock, ArrowRight, CheckCircle, Eye, EyeOff } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('super@incial.com');
-  const [password, setPassword] = useState('super');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -44,27 +42,6 @@ export const LoginPage: React.FC = () => {
           });
           setIsLoading(false);
       }, 1000);
-  };
-
-  const fillCredentials = (role: DemoRole) => {
-      switch(role) {
-          case 'super':
-              setEmail('super@incial.com');
-              setPassword('super');
-              break;
-          case 'admin':
-              setEmail('admin@incial.com');
-              setPassword('admin');
-              break;
-          case 'employee':
-              setEmail('employee@incial.com');
-              setPassword('employee');
-              break;
-          case 'client':
-              setEmail('client@incial.com');
-              setPassword('client');
-              break;
-      }
   };
 
   return (
@@ -134,7 +111,7 @@ export const LoginPage: React.FC = () => {
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
                                 className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:bg-white transition-all font-medium"
-                                placeholder="name@incial.com"
+                                placeholder="name@gmail.com"
                                 required
                             />
                         </div>
@@ -211,52 +188,6 @@ export const LoginPage: React.FC = () => {
                     </>
                 )}
             </button>
-
-            <div className="grid grid-cols-2 gap-3 mt-6">
-                <button 
-                    onClick={() => fillCredentials('super')}
-                    className="p-2.5 border border-gray-200 rounded-xl text-left hover:border-brand-500 hover:bg-brand-50/50 transition-all group"
-                >
-                    <div className="flex items-center gap-2 mb-1">
-                        <Crown className="h-4 w-4 text-brand-600" />
-                        <span className="text-sm font-bold text-gray-900">Super Admin</span>
-                    </div>
-                    <div className="text-[10px] text-gray-400 group-hover:text-brand-600">Full Access</div>
-                </button>
-
-                <button 
-                    onClick={() => fillCredentials('admin')}
-                    className="p-2.5 border border-gray-200 rounded-xl text-left hover:border-blue-500 hover:bg-blue-50/50 transition-all group"
-                >
-                    <div className="flex items-center gap-2 mb-1">
-                        <Shield className="h-4 w-4 text-blue-600" />
-                        <span className="text-sm font-bold text-gray-900">Admin</span>
-                    </div>
-                    <div className="text-[10px] text-gray-400 group-hover:text-blue-600">No Analytics</div>
-                </button>
-
-                <button 
-                    onClick={() => fillCredentials('employee')}
-                    className="p-2.5 border border-gray-200 rounded-xl text-left hover:border-indigo-500 hover:bg-indigo-50/50 transition-all group"
-                >
-                    <div className="flex items-center gap-2 mb-1">
-                        <User className="h-4 w-4 text-indigo-600" />
-                        <span className="text-sm font-bold text-gray-900">Employee</span>
-                    </div>
-                    <div className="text-[10px] text-gray-400 group-hover:text-indigo-600">Operational Only</div>
-                </button>
-
-                <button 
-                    onClick={() => fillCredentials('client')}
-                    className="p-2.5 border border-gray-200 rounded-xl text-left hover:border-green-500 hover:bg-green-50/50 transition-all group"
-                >
-                    <div className="flex items-center gap-2 mb-1">
-                        <Briefcase className="h-4 w-4 text-green-600" />
-                        <span className="text-sm font-bold text-gray-900">Client</span>
-                    </div>
-                    <div className="text-[10px] text-gray-400 group-hover:text-green-600">Restricted View</div>
-                </button>
-            </div>
          </div>
       </div>
     </div>

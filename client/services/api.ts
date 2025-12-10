@@ -1,10 +1,19 @@
 
 import axios from 'axios';
 import { CRMEntry, Task, Meeting, User, UserRole, AuthResponse } from '../types';
-import { MOCK_CRM_DATA, MOCK_TASKS_DATA, MOCK_MEETINGS_DATA } from './mockData';
 
-// In a real app, this comes from env
-const API_URL = 'https://api.incial.com/api/v1'; 
+// ============================================================================
+// ⚙️ API CONFIGURATION
+// ============================================================================
+
+// Toggle this to FALSE to connect to your real backend
+const USE_MOCK_SERVICE = true; 
+
+// Your Real Backend URL (e.g., Node/Express server)
+// In production, this should ideally come from process.env.REACT_APP_API_URL
+const API_URL = 'http://localhost:8080/api/v1'; 
+
+// ============================================================================
 
 const api = axios.create({
   baseURL: API_URL,
@@ -16,124 +25,216 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Mock delay to simulate network
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+// ============================================================================
+// 🧠 IN-MEMORY DATABASE (Volatile)
+// ============================================================================
+// Data resets on page reload. Connect to backend for persistence.
+
+let memoryCrm: CRMEntry[] = [];
+let memoryTasks: Task[] = [];
+let memoryMeetings: Meeting[] = [];
+
+// ============================================================================
+
+// --- CRM API ---
 export const crmApi = {
-  // Mocking the get call for demonstration purposes since we don't have a real backend
   getAll: async (): Promise<{crmList: CRMEntry[]}> => {
-    // REAL CALL: return api.get("/crm/all");
-    await delay(600);
-    const stored = localStorage.getItem('mock_crm_data');
-    if (stored) {
-        try {
-            const parsed = JSON.parse(stored);
-            // Sanitize legacy data: Ensure 'work' is string[], not object[]
-            const sanitized = parsed.map((entry: any) => ({
-                ...entry,
-                work: Array.isArray(entry.work) 
-                    ? entry.work.map((w: any) => (typeof w === 'object' && w !== null && 'name' in w) ? w.name : w) 
-                    : []
-            }));
-            // Update storage with sanitized data
-            localStorage.setItem('mock_crm_data', JSON.stringify(sanitized));
-            return { crmList: sanitized };
-        } catch (e) {
-            console.warn("Failed to parse local CRM data", e);
-            return { crmList: MOCK_CRM_DATA };
-        }
+    if (!USE_MOCK_SERVICE) {
+        const res = await api.get("/crm/all");
+        return res.data;
     }
-    return { crmList: MOCK_CRM_DATA };
+    
+    await delay(400);
+    return { crmList: [...memoryCrm] };
   },
 
   create: async (data: Omit<CRMEntry, 'id'>): Promise<CRMEntry> => {
-    // REAL CALL: return api.post("/crm/create", data);
-    await delay(400);
-    const newEntry = { 
+    if (!USE_MOCK_SERVICE) {
+        const res = await api.post("/crm/create", data);
+        return res.data;
+    }
+
+    await delay(300);
+    
+    const newEntry: CRMEntry = { 
         ...data, 
         id: Date.now(),
-        // Generate a reference ID if it's a "Company" type status
+        // Auto-generate ref ID for deals in progress
         referenceId: (data.status === 'onboarded' || data.status === 'on progress') 
-            ? `REF-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`
+            ? `REF-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`
             : undefined
     };
+    
+    memoryCrm = [newEntry, ...memoryCrm];
     return newEntry;
   },
 
   update: async (id: number, data: Partial<CRMEntry>): Promise<CRMEntry> => {
-     // REAL CALL: return api.put(`/crm/update/${id}`, data);
+     if (!USE_MOCK_SERVICE) {
+        const res = await api.put(`/crm/update/${id}`, data);
+        return res.data;
+     }
+
      await delay(300);
-     return { id, ...data } as CRMEntry;
+     
+     let updatedItem = {} as CRMEntry;
+     memoryCrm = memoryCrm.map(item => {
+         if (item.id === id) {
+             updatedItem = { ...item, ...data };
+             return updatedItem;
+         }
+         return item;
+     });
+     
+     return updatedItem;
   },
 
   delete: async (id: number): Promise<void> => {
-    // REAL CALL: return api.delete(`/crm/delete/${id}`);
+    if (!USE_MOCK_SERVICE) {
+        await api.delete(`/crm/delete/${id}`);
+        return;
+    }
+
     await delay(300);
+    memoryCrm = memoryCrm.filter(i => i.id !== id);
   }
 };
 
+// --- TASKS API ---
 export const tasksApi = {
   getAll: async (): Promise<Task[]> => {
-    await delay(600);
-    const stored = localStorage.getItem('mock_tasks_data');
-    if (stored) return JSON.parse(stored);
-    return MOCK_TASKS_DATA;
+    if (!USE_MOCK_SERVICE) {
+        const res = await api.get("/tasks/all");
+        return res.data;
+    }
+
+    await delay(300);
+    return [...memoryTasks];
   },
 
   create: async (data: Omit<Task, 'id' | 'createdAt'>): Promise<Task> => {
-    await delay(300);
+    if (!USE_MOCK_SERVICE) {
+        const res = await api.post("/tasks/create", data);
+        return res.data;
+    }
+
+    await delay(200);
+
     const newEntry: Task = { 
       ...data, 
       id: Date.now(),
       createdAt: new Date().toISOString()
     };
+    
+    memoryTasks = [newEntry, ...memoryTasks];
     return newEntry;
   },
 
   update: async (id: number, data: Partial<Task>): Promise<Task> => {
+     if (!USE_MOCK_SERVICE) {
+        const res = await api.put(`/tasks/update/${id}`, data);
+        return res.data;
+     }
+
      await delay(200);
-     return { id, ...data } as Task;
+     let updatedItem = {} as Task;
+
+     memoryTasks = memoryTasks.map(item => {
+         if (item.id === id) {
+             updatedItem = { ...item, ...data };
+             return updatedItem;
+         }
+         return item;
+     });
+
+     return updatedItem;
   },
 
   delete: async (id: number): Promise<void> => {
+    if (!USE_MOCK_SERVICE) {
+        await api.delete(`/tasks/delete/${id}`);
+        return;
+    }
+
     await delay(200);
+    memoryTasks = memoryTasks.filter(i => i.id !== id);
   }
 };
 
+// --- MEETINGS API ---
 export const meetingsApi = {
   getAll: async (): Promise<Meeting[]> => {
-    await delay(600);
-    const stored = localStorage.getItem('mock_meetings_data');
-    if (stored) return JSON.parse(stored);
-    return MOCK_MEETINGS_DATA;
+    if (!USE_MOCK_SERVICE) {
+        const res = await api.get("/meetings/all");
+        return res.data;
+    }
+
+    await delay(300);
+    return [...memoryMeetings];
   },
 
   create: async (data: Omit<Meeting, 'id' | 'createdAt'>): Promise<Meeting> => {
-    await delay(300);
+    if (!USE_MOCK_SERVICE) {
+        const res = await api.post("/meetings/create", data);
+        return res.data;
+    }
+
+    await delay(200);
+
     const newEntry: Meeting = {
       ...data,
       id: Date.now(),
       createdAt: new Date().toISOString()
     };
+
+    memoryMeetings = [newEntry, ...memoryMeetings];
     return newEntry;
   },
 
   update: async (id: number, data: Partial<Meeting>): Promise<Meeting> => {
+    if (!USE_MOCK_SERVICE) {
+        const res = await api.put(`/meetings/update/${id}`, data);
+        return res.data;
+    }
+
     await delay(200);
-    return { id, ...data } as Meeting;
+    let updatedItem = {} as Meeting;
+
+    memoryMeetings = memoryMeetings.map(item => {
+        if (item.id === id) {
+            updatedItem = { ...item, ...data };
+            return updatedItem;
+        }
+        return item;
+    });
+
+    return updatedItem;
   },
 
   delete: async (id: number): Promise<void> => {
+    if (!USE_MOCK_SERVICE) {
+        await api.delete(`/meetings/delete/${id}`);
+        return;
+    }
+
     await delay(200);
+    memoryMeetings = memoryMeetings.filter(i => i.id !== id);
   }
 };
 
+// --- AUTH API ---
 export const authApi = {
   login: async (email: string, password: string): Promise<AuthResponse> => {
-    // REAL CALL: return api.post("/auth/login", { email, password });
+    if (!USE_MOCK_SERVICE) {
+        const res = await api.post("/auth/login", { email, password });
+        return res.data;
+    }
+
     await delay(800);
     
-    // 1. SUPER ADMIN (Everything)
+    // Hardcoded demo credentials for Mock Mode
     if (email === 'super@incial.com' && password === 'super') {
       return {
         statusCode: 200,
@@ -144,19 +245,16 @@ export const authApi = {
       };
     }
 
-    // 2. ADMIN (Everything except Analytics)
     if (email === 'admin@incial.com' && password === 'admin') {
       return {
         statusCode: 200,
         token: "mock-jwt-token-admin",
         role: "ROLE_ADMIN",
-        // FIX: Changed name from "Vallapata (Admin)" to "Vallapata" to match MOCK_TASKS_DATA
         user: { id: 2, name: "Vallapata", email, role: "ROLE_ADMIN" as UserRole },
         message: "Login successful"
       };
     }
 
-    // 3. EMPLOYEE (Tasks, Companies, Client Tracker, Meetings)
     if (email === 'employee@incial.com' && password === 'employee') {
       return {
         statusCode: 200,
@@ -167,18 +265,18 @@ export const authApi = {
       };
     }
 
-    // 4. CLIENT (Own Company Data Only) - Mapping to Company ID 1 (SMR Rubbers)
     if (email === 'client@incial.com' && password === 'client') {
       return {
         statusCode: 200,
         token: "mock-jwt-token-client",
         role: "ROLE_CLIENT",
+        // Note: For mock client access to work perfectly, you need to create a Company with ID 1 first in the CRM
         user: { 
             id: 4, 
             name: "Anil Michael", 
             email, 
             role: "ROLE_CLIENT" as UserRole,
-            companyId: 1 // Linked to SMR Rubbers in mock data
+            companyId: 1 
         },
         message: "Login successful"
       };
