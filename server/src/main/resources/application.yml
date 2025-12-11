@@ -1,6 +1,9 @@
 spring:
+  profiles:
+    active: local
   application:
     name: incial- backend
+
 
   datasource:
     url: ${ENV_DB_URL}

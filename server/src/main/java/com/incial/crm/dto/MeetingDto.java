@@ -11,11 +11,14 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDto {
+public class MeetingDto {
     private Long id;
-    private String name;
-    private String email;
-    private String role;
-    private Integer tasksCompleted;
+    private String title;
+    private LocalDateTime dateTime;
+    private String status;
+    private String meetingLink;
+    private String notes;
+    private Long companyId;
+    private String assignedTo;
     private LocalDateTime createdAt;
 }

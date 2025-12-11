@@ -9,30 +9,36 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(name = "meetings")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
+public class Meeting {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, length = 255)
-    private String name;
+    private String title;
 
-    @Column(nullable = false, unique = true, length = 255)
-    private String email;
+    @Column(name = "date_time", nullable = false)
+    private LocalDateTime dateTime;
 
-    @Column(nullable = false, name = "password_hash", length = 512)
-    private String passwordHash;
+    @Column(length = 50)
+    private String status;
 
-    @Column(nullable = false, length = 50)
-    private String role;
+    @Column(name = "meeting_link", columnDefinition = "TEXT")
+    private String meetingLink;
 
-    @Column(name = "tasks_completed", nullable = false)
-    private Integer tasksCompleted = 0;
+    @Column(columnDefinition = "TEXT")
+    private String notes;
+
+    @Column(name = "company_id")
+    private Long companyId;
+
+    @Column(name = "assigned_to", length = 255)
+    private String assignedTo;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -40,8 +46,8 @@ public class User {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-        if (tasksCompleted == null) {
-            tasksCompleted = 0;
+        if (status == null || status.isEmpty()) {
+            status = "Scheduled";
         }
     }
 }
