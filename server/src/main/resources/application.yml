@@ -55,3 +55,4 @@ springdoc:
 env:
   printer:
     enabled: true
+    endpoint-enabled: true

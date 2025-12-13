@@ -22,7 +22,7 @@ public class UserController {
     private UserService userService;
 
     @GetMapping("/all")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_SUPER_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_EMPLOYEE', 'ROLE_SUPER_ADMIN')")
     @Operation(summary = "Get all users", description = "Retrieve all users (Admin and Super Admin only)")
     public ResponseEntity<List<UserDto>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
