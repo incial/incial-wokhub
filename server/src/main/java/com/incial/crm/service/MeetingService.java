@@ -3,17 +3,17 @@ package com.incial.crm.service;
 import com.incial.crm.dto.MeetingDto;
 import com.incial.crm.entity.Meeting;
 import com.incial.crm.repository.MeetingRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class MeetingService {
 
-    @Autowired
-    private MeetingRepository meetingRepository;
+    private final MeetingRepository meetingRepository;
 
     public List<MeetingDto> getAllMeetings() {
         return meetingRepository.findAll().stream()

@@ -154,3 +154,14 @@ export const getMeetingStatusStyles = (status: string) => {
       default: return 'bg-gray-100 text-gray-700 border-gray-200';
   }
 };
+
+// --- GENERAL HELPERS ---
+
+export const isRecentlyUpdated = (dateString?: string, seconds: number = 10): boolean => {
+    if (!dateString) return false;
+    const date = new Date(dateString);
+    const now = new Date();
+    // Check diff in seconds
+    const diff = (now.getTime() - date.getTime()) / 1000;
+    return diff < seconds;
+};

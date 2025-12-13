@@ -2,7 +2,7 @@ package com.incial.crm.controller;
 
 import com.incial.crm.dto.CrmEntryDto;
 import com.incial.crm.service.CrmService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,10 +14,10 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/crm")
 @CrossOrigin(origins = "*")
+@RequiredArgsConstructor
 public class CrmController {
 
-    @Autowired
-    private CrmService crmService;
+    private final CrmService crmService;
 
     @GetMapping("/all")
     @PreAuthorize(

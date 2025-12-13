@@ -4,7 +4,7 @@ import com.incial.crm.dto.UserDto;
 import com.incial.crm.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -16,23 +16,16 @@ import java.util.List;
 @RequestMapping("/api/v1/users")
 @CrossOrigin(origins = "*")
 @Tag(name = "Users", description = "User management APIs")
+@RequiredArgsConstructor
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
     @GetMapping("/all")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_EMPLOYEE', 'ROLE_SUPER_ADMIN')")
     @Operation(summary = "Get all users", description = "Retrieve all users (Admin and Super Admin only)")
     public ResponseEntity<List<UserDto>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
-    }
-
-    @GetMapping("/leaderboard")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_EMPLOYEE', 'ROLE_SUPER_ADMIN')")
-    @Operation(summary = "Get leaderboard", description = "Get users sorted by tasks completed (for leaderboard)")
-    public ResponseEntity<List<UserDto>> getLeaderboard() {
-        return ResponseEntity.ok(userService.getLeaderboard());
     }
 
     @GetMapping("/me")

@@ -6,23 +6,26 @@ import { useAuth } from '../context/AuthContext';
 import { tasksApi, meetingsApi } from '../services/api';
 import { Task, Meeting } from '../types';
 import { 
-    CheckCircle2, 
     Calendar, 
     Clock, 
     ArrowRight, 
-    ListTodo, 
     Video, 
     Plus, 
-    TrendingUp,
-    AlertCircle,
-    CalendarDays
+    CheckCircle2, 
+    Briefcase,
+    MoreHorizontal,
+    CalendarDays,
+    ChevronRight,
+    Target,
+    Zap,
+    Layout
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { formatDate } from '../utils';
 
 export const MyDashboardPage: React.FC = () => {
     const { user } = useAuth();
-    const [tasks, setTasks] = useState<Task[]>([]);
+    const [allTasks, setAllTasks] = useState<Task[]>([]);
     const [meetings, setMeetings] = useState<Meeting[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -35,20 +38,15 @@ export const MyDashboardPage: React.FC = () => {
                     meetingsApi.getAll()
                 ]);
 
-                // Filter Tasks for current user (Active Pipeline)
-                // Exclude: Completed, Done, Dropped
-                const myTasks = tasksData.filter(t => 
-                    t.assignedTo === user?.name && 
-                    !['Completed', 'Done', 'Dropped'].includes(t.status)
-                );
-                setTasks(myTasks);
+                // Filter tasks assigned to user
+                const myTasks = tasksData.filter(t => t.assignedTo === user?.name);
+                setAllTasks(myTasks);
 
-                // Filter Meetings (In a real app, filter by attendee. Here showing mostly future ones)
+                // Filter Meetings: Future meetings sorted by time
                 const now = new Date();
-                const upcomingMeetings = meetingsData.filter(m => 
-                    new Date(m.dateTime) >= now && 
-                    m.status !== 'Cancelled'
-                ).sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+                const upcomingMeetings = meetingsData
+                    .filter(m => new Date(m.dateTime) >= now && m.status !== 'Cancelled')
+                    .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
                 
                 setMeetings(upcomingMeetings);
 
@@ -61,30 +59,68 @@ export const MyDashboardPage: React.FC = () => {
         loadData();
     }, [user]);
 
-    // Derived State
+    // --- Derived Metrics & Data ---
+
+    const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+    const activeTasks = allTasks.filter(t => !['Completed', 'Done', 'Dropped'].includes(t.status));
+    const completedTasks = allTasks.filter(t => ['Completed', 'Done'].includes(t.status));
+    
+    // Stats
+    const nextMeeting = meetings[0];
+    
+    // Efficiency Score
+    const efficiency = allTasks.length > 0 
+        ? Math.round((completedTasks.length / allTasks.length) * 100) 
+        : 0;
+
+    // Greeting Logic
     const greeting = useMemo(() => {
         const hour = new Date().getHours();
-        if (hour < 12) return 'Good morning';
-        if (hour < 18) return 'Good afternoon';
-        return 'Good evening';
+        if (hour < 12) return 'Good Morning';
+        if (hour < 18) return 'Good Afternoon';
+        return 'Good Evening';
     }, []);
 
-    // Generate local YYYY-MM-DD string for today based on IST
-    const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+    const currentDateDisplay = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-    const highPriorityCount = tasks.filter(t => t.priority === 'High').length;
-    const dueTodayCount = tasks.filter(t => t.dueDate === todayStr).length;
-    const nextMeeting = meetings[0];
-
-    const sortedTasks = useMemo(() => {
-        // Sort by Priority (High > Medium > Low) then Date
-        const priorityWeight = { 'High': 3, 'Medium': 2, 'Low': 1 };
-        return [...tasks].sort((a, b) => {
-            const weightDiff = priorityWeight[b.priority] - priorityWeight[a.priority];
+    // Sorted Priority Tasks (Top 5)
+    const priorityTasks = useMemo(() => {
+        const weight = { 'High': 3, 'Medium': 2, 'Low': 1 };
+        return [...activeTasks].sort((a, b) => {
+            // Sort by Due Date (Today first)
+            if (a.dueDate === todayStr && b.dueDate !== todayStr) return -1;
+            if (b.dueDate === todayStr && a.dueDate !== todayStr) return 1;
+            
+            // Then by Priority
+            const weightDiff = weight[b.priority] - weight[a.priority];
             if (weightDiff !== 0) return weightDiff;
+            
+            // Then by Date ascending
             return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-        }).slice(0, 5); // Show top 5
-    }, [tasks]);
+        }).slice(0, 5);
+    }, [activeTasks, todayStr]);
+
+    // Loading Skeleton
+    if (isLoading) {
+        return (
+            <div className="flex min-h-screen bg-slate-50">
+                <Sidebar />
+                <div className="flex-1 flex flex-col">
+                    <Navbar />
+                    <div className="p-8 space-y-8">
+                        <div className="h-16 bg-gray-100 rounded-xl w-1/3 animate-pulse" />
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div className="lg:col-span-2 space-y-6">
+                                <div className="h-64 bg-gray-100 rounded-3xl animate-pulse" />
+                                <div className="h-96 bg-gray-100 rounded-3xl animate-pulse" />
+                            </div>
+                            <div className="h-full bg-gray-100 rounded-3xl animate-pulse" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex min-h-screen bg-[#F8FAFC]">
@@ -92,242 +128,244 @@ export const MyDashboardPage: React.FC = () => {
             <div className="flex-1 flex flex-col min-w-0">
                 <Navbar />
                 
-                <main className="flex-1 p-8 overflow-y-auto custom-scrollbar h-[calc(100vh-80px)]">
+                <main className="flex-1 p-6 lg:p-10 overflow-y-auto custom-scrollbar h-[calc(100vh-80px)]">
                     
-                    {/* Hero Header */}
-                    <div className="mb-10">
-                        <h1 className="text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
-                            {greeting}, {user?.name?.split(' ')[0]} 👋
-                        </h1>
-                        <p className="text-gray-500 mt-2 text-lg font-medium">Here is what’s happening with your projects today.</p>
+                    {/* Header: Clean & Text Focused */}
+                    <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                        <div>
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="h-px w-8 bg-brand-300"></span>
+                                <span className="text-xs font-bold text-brand-600 uppercase tracking-widest">{currentDateDisplay}</span>
+                            </div>
+                            <h1 className="text-3xl lg:text-4xl font-extrabold text-gray-900 tracking-tight">
+                                {greeting}, <span className="text-gray-400">{user?.name?.split(' ')[0]}</span>
+                            </h1>
+                        </div>
+                        <Link to="/tasks" className="hidden md:flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-brand-600 transition-colors group">
+                            Go to Board <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                        </Link>
                     </div>
 
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-                        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-32 group hover:border-brand-200 transition-colors">
-                            <div className="flex justify-between items-start">
-                                <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
-                                    <ListTodo className="h-5 w-5" />
-                                </div>
-                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Active</span>
-                            </div>
-                            <div>
-                                <h3 className="text-2xl font-bold text-gray-900">{tasks.length}</h3>
-                                <p className="text-xs text-gray-500 font-medium">Tasks in your queue</p>
-                            </div>
-                        </div>
-
-                        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-32 group hover:border-red-200 transition-colors">
-                            <div className="flex justify-between items-start">
-                                <div className="p-2 bg-red-50 text-red-600 rounded-xl">
-                                    <AlertCircle className="h-5 w-5" />
-                                </div>
-                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Attention</span>
-                            </div>
-                            <div>
-                                <h3 className="text-2xl font-bold text-gray-900">{highPriorityCount}</h3>
-                                <p className="text-xs text-gray-500 font-medium">High priority items</p>
-                            </div>
-                        </div>
-
-                        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-32 group hover:border-orange-200 transition-colors">
-                            <div className="flex justify-between items-start">
-                                <div className="p-2 bg-orange-50 text-orange-600 rounded-xl">
-                                    <Clock className="h-5 w-5" />
-                                </div>
-                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Due Today</span>
-                            </div>
-                            <div>
-                                <h3 className="text-2xl font-bold text-gray-900">{dueTodayCount}</h3>
-                                <p className="text-xs text-gray-500 font-medium">Tasks expiring soon</p>
-                            </div>
-                        </div>
-
-                        <div className="bg-gradient-to-br from-brand-600 to-indigo-700 p-5 rounded-2xl border border-transparent shadow-lg shadow-brand-500/20 flex flex-col justify-between h-32 text-white">
-                            <div className="flex justify-between items-start">
-                                <div className="p-2 bg-white/20 rounded-xl text-white">
-                                    <Video className="h-5 w-5" />
-                                </div>
-                                <span className="text-xs font-bold text-white/60 uppercase tracking-wider">Up Next</span>
-                            </div>
-                            <div>
-                                {nextMeeting ? (
-                                    <>
-                                        <h3 className="text-sm font-bold truncate mb-0.5">{nextMeeting.title}</h3>
-                                        <p className="text-xs text-white/70 font-medium">
-                                            {new Date(nextMeeting.dateTime).toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit', timeZone: 'Asia/Kolkata'})} Today
-                                        </p>
-                                    </>
-                                ) : (
-                                    <p className="text-sm font-medium text-white/80 mt-auto">No meetings scheduled.</p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Main Content Grid */}
-                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                         
-                        {/* Left Column: Priority Tasks */}
-                        <div className="xl:col-span-2 space-y-6">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                                    <CheckCircle2 className="h-5 w-5 text-brand-600" />
-                                    My Priority Tasks
-                                </h2>
-                                <Link to="/tasks" className="text-sm font-semibold text-brand-600 hover:text-brand-700 flex items-center gap-1">
-                                    View All Tasks <ArrowRight className="h-4 w-4" />
-                                </Link>
-                            </div>
-
-                            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden min-h-[400px]">
-                                {isLoading ? (
-                                    <div className="flex items-center justify-center h-64">
-                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
+                        {/* LEFT COLUMN: PRIMARY WORKFLOW (8/12) */}
+                        <div className="lg:col-span-8 space-y-8">
+                            
+                            {/* 1. HERO FOCUS CARD */}
+                            <div className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm relative overflow-hidden group">
+                                {/* Ambient Background */}
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-brand-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50 group-hover:opacity-100 transition-opacity"></div>
+                                
+                                <div className="relative z-10">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                                            <Target className="h-5 w-5 text-brand-500" />
+                                            Current Focus
+                                        </h2>
+                                        <span className="px-3 py-1 rounded-full bg-gray-50 border border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wide">
+                                            {nextMeeting ? 'Meeting Soon' : 'Top Priority'}
+                                        </span>
                                     </div>
-                                ) : sortedTasks.length > 0 ? (
-                                    <div className="divide-y divide-gray-50">
-                                        {sortedTasks.map(task => (
-                                            <div key={task.id} className="p-5 flex items-center gap-4 hover:bg-gray-50/50 transition-colors group">
-                                                <div className={`h-12 w-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                                                    task.status === 'In Progress' ? 'bg-blue-50 text-blue-600' :
-                                                    task.status === 'In Review' ? 'bg-purple-50 text-purple-600' :
-                                                    'bg-gray-50 text-gray-400'
-                                                }`}>
-                                                    <CheckCircle2 className="h-6 w-6" />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${
-                                                            task.priority === 'High' ? 'bg-red-50 text-red-700 border-red-100' :
-                                                            task.priority === 'Medium' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                                                            'bg-emerald-50 text-emerald-700 border-emerald-100'
-                                                        }`}>
-                                                            {task.priority}
-                                                        </span>
-                                                        <span className={`text-xs font-medium ${task.dueDate === todayStr ? 'text-orange-600 font-bold' : 'text-gray-400'}`}>
-                                                            Due {formatDate(task.dueDate)} {task.dueDate === todayStr ? '(Today)' : ''}
-                                                        </span>
-                                                    </div>
-                                                    <h3 className="text-sm font-bold text-gray-900 truncate group-hover:text-brand-600 transition-colors">
-                                                        {task.title}
-                                                    </h3>
-                                                </div>
-                                                <div className="text-right hidden sm:block">
-                                                    <span className={`text-xs font-bold px-3 py-1 rounded-full ${
-                                                        task.status === 'In Progress' ? 'bg-blue-50 text-blue-700' :
-                                                        task.status === 'In Review' ? 'bg-purple-50 text-purple-700' :
-                                                        'bg-gray-100 text-gray-600'
-                                                    }`}>
-                                                        {task.status}
-                                                    </span>
+
+                                    {nextMeeting ? (
+                                        <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+                                            <div className="h-16 w-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0">
+                                                <Video className="h-8 w-8" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <h3 className="text-2xl font-bold text-gray-900 leading-tight mb-2">{nextMeeting.title}</h3>
+                                                <div className="flex items-center gap-4 text-sm text-gray-500">
+                                                    <span className="flex items-center gap-1.5"><Clock className="h-4 w-4" /> {new Date(nextMeeting.dateTime).toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit', timeZone: 'Asia/Kolkata'})}</span>
+                                                    <span>•</span>
+                                                    <span>Via {nextMeeting.meetingLink ? 'Video Call' : 'Scheduled Location'}</span>
                                                 </div>
                                             </div>
-                                        ))}
-                                        <div className="p-4 text-center">
-                                            <Link to="/tasks" className="text-xs font-bold text-gray-400 hover:text-brand-600 uppercase tracking-wide">
-                                                +{tasks.length - sortedTasks.length} more tasks pending
+                                            {nextMeeting.meetingLink && (
+                                                <a href={nextMeeting.meetingLink} target="_blank" rel="noreferrer" className="mt-4 md:mt-0 px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-lg shadow-brand-500/30 transition-all active:scale-95 flex items-center gap-2">
+                                                    Join Now <ArrowRight className="h-4 w-4" />
+                                                </a>
+                                            )}
+                                        </div>
+                                    ) : priorityTasks.length > 0 ? (
+                                        <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+                                            <div className="h-16 w-16 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center flex-shrink-0">
+                                                <Zap className="h-8 w-8" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100">HIGH PRIORITY</span>
+                                                    <span className="text-xs text-gray-400 font-medium">Due {formatDate(priorityTasks[0].dueDate)}</span>
+                                                </div>
+                                                <h3 className="text-2xl font-bold text-gray-900 leading-tight">{priorityTasks[0].title}</h3>
+                                            </div>
+                                            <Link to="/tasks" className="mt-4 md:mt-0 px-6 py-3 bg-white border border-gray-200 text-gray-700 hover:border-brand-300 hover:text-brand-600 font-bold rounded-xl transition-all flex items-center gap-2">
+                                                View Details <ArrowRight className="h-4 w-4" />
                                             </Link>
                                         </div>
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center h-64 text-center">
-                                        <div className="h-16 w-16 bg-green-50 rounded-full flex items-center justify-center mb-4">
-                                            <CheckCircle2 className="h-8 w-8 text-green-500" />
-                                        </div>
-                                        <h3 className="text-gray-900 font-bold">All caught up!</h3>
-                                        <p className="text-gray-500 text-sm mt-1">You have no pending tasks assigned.</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Right Column: Meetings & Quick Actions */}
-                        <div className="space-y-8">
-                            
-                            {/* Upcoming Meetings */}
-                            <div className="space-y-6">
-                                <div className="flex items-center justify-between">
-                                    <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                                        <CalendarDays className="h-5 w-5 text-brand-600" />
-                                        Upcoming
-                                    </h2>
-                                    <Link to="/calendar" className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors">
-                                        <ArrowRight className="h-4 w-4" />
-                                    </Link>
-                                </div>
-
-                                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden min-h-[200px]">
-                                    {meetings.length > 0 ? (
-                                        <div className="divide-y divide-gray-50">
-                                            {meetings.slice(0, 3).map(meeting => (
-                                                <div key={meeting.id} className="p-5 hover:bg-gray-50/50 transition-colors">
-                                                    <div className="flex items-start gap-4">
-                                                        <div className="flex flex-col items-center justify-center bg-gray-50 border border-gray-100 rounded-xl w-14 h-14 flex-shrink-0">
-                                                            <span className="text-[10px] font-bold text-red-500 uppercase">
-                                                                {new Date(meeting.dateTime).toLocaleDateString('en-IN', { month: 'short', timeZone: 'Asia/Kolkata' })}
-                                                            </span>
-                                                            <span className="text-xl font-bold text-gray-900">
-                                                                {new Date(meeting.dateTime).toLocaleDateString('en-IN', { day: 'numeric', timeZone: 'Asia/Kolkata' })}
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <h4 className="text-sm font-bold text-gray-900 truncate mb-1">{meeting.title}</h4>
-                                                            <div className="flex items-center gap-2 text-xs text-gray-500">
-                                                                <Clock className="h-3.5 w-3.5" />
-                                                                <span>{new Date(meeting.dateTime).toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit', timeZone: 'Asia/Kolkata'})}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    {meeting.meetingLink && (
-                                                        <a 
-                                                            href={meeting.meetingLink} 
-                                                            target="_blank" 
-                                                            rel="noopener noreferrer"
-                                                            className="mt-3 flex items-center justify-center gap-2 w-full py-2 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-lg text-xs font-bold transition-colors"
-                                                        >
-                                                            <Video className="h-3.5 w-3.5" /> Join Meeting
-                                                        </a>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
                                     ) : (
-                                        <div className="p-8 text-center">
-                                            <p className="text-sm text-gray-500">No upcoming meetings scheduled.</p>
+                                        <div className="text-center py-6">
+                                            <div className="inline-flex p-3 bg-green-50 text-green-600 rounded-full mb-3">
+                                                <CheckCircle2 className="h-6 w-6" />
+                                            </div>
+                                            <h3 className="text-lg font-bold text-gray-900">All clear!</h3>
+                                            <p className="text-gray-500">You have no pending high-priority items.</p>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
-                            {/* Quick Actions */}
-                            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-6 text-white shadow-xl">
-                                <h3 className="font-bold text-lg mb-4">Quick Actions</h3>
-                                <div className="space-y-3">
-                                    <Link to="/tasks" className="flex items-center justify-between p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all cursor-pointer group">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-blue-500 rounded-lg">
-                                                <Plus className="h-4 w-4 text-white" />
-                                            </div>
-                                            <span className="font-medium text-sm">Create New Task</span>
-                                        </div>
-                                        <ArrowRight className="h-4 w-4 text-white/50 group-hover:translate-x-1 transition-transform" />
+                            {/* 2. TASK QUEUE */}
+                            <div>
+                                <div className="flex items-center justify-between px-2 mb-4">
+                                    <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                        <Layout className="h-5 w-5 text-gray-400" />
+                                        Your Queue
+                                    </h2>
+                                    <Link to="/tasks" className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <Plus className="h-4 w-4 text-gray-600" />
                                     </Link>
-                                    <Link to="/calendar" className="flex items-center justify-between p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all cursor-pointer group">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-purple-500 rounded-lg">
-                                                <Calendar className="h-4 w-4 text-white" />
-                                            </div>
-                                            <span className="font-medium text-sm">Schedule Meeting</span>
+                                </div>
+
+                                <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden min-h-[300px]">
+                                    {priorityTasks.length > 0 ? (
+                                        <div className="divide-y divide-gray-50">
+                                            {priorityTasks.map((task) => (
+                                                <div key={task.id} className="group p-5 flex items-center gap-4 hover:bg-gray-50/80 transition-colors cursor-pointer">
+                                                    
+                                                    {/* Custom Checkbox visual */}
+                                                    <div className={`h-6 w-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                                        task.status === 'Completed' ? 'bg-green-500 border-green-500' : 'border-gray-300 group-hover:border-brand-400'
+                                                    }`}>
+                                                        {task.status === 'Completed' && <CheckCircle2 className="h-4 w-4 text-white" />}
+                                                    </div>
+
+                                                    <div className="flex-1 min-w-0">
+                                                        <h4 className="text-sm font-bold text-gray-900 truncate group-hover:text-brand-600 transition-colors">{task.title}</h4>
+                                                        <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                                                            <span className={`flex items-center gap-1 ${task.dueDate === todayStr ? 'text-red-500 font-semibold' : ''}`}>
+                                                                <Calendar className="h-3 w-3" />
+                                                                {task.dueDate === todayStr ? 'Today' : formatDate(task.dueDate)}
+                                                            </span>
+                                                            {task.priority === 'High' && (
+                                                                <span className="text-red-600 font-semibold bg-red-50 px-1.5 rounded">High</span>
+                                                            )}
+                                                            <span className="bg-gray-100 px-1.5 rounded">{task.status}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-brand-400 transition-colors" />
+                                                </div>
+                                            ))}
+                                            <Link to="/tasks" className="block p-4 text-center text-xs font-bold text-gray-400 hover:text-brand-600 hover:bg-gray-50 transition-colors uppercase tracking-widest">
+                                                View all {activeTasks.length} tasks
+                                            </Link>
                                         </div>
-                                        <ArrowRight className="h-4 w-4 text-white/50 group-hover:translate-x-1 transition-transform" />
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center h-64 text-center">
+                                            <div className="h-16 w-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                                                <Briefcase className="h-8 w-8 text-gray-300" />
+                                            </div>
+                                            <p className="text-gray-500 font-medium">No active tasks in queue.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* RIGHT COLUMN: CONTEXT & SCHEDULE (4/12) */}
+                        <div className="lg:col-span-4 space-y-8">
+                            
+                            {/* 1. DAILY BRIEF (Calendar Widget) */}
+                            <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6">
+                                <div className="flex items-center justify-between mb-6">
+                                    <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                                        <CalendarDays className="h-5 w-5 text-gray-400" />
+                                        Today's Brief
+                                    </h3>
+                                    <span className="text-xs font-bold text-brand-600 bg-brand-50 px-2 py-1 rounded-md">
+                                        {meetings.length} Events
+                                    </span>
+                                </div>
+
+                                <div className="space-y-6 relative pl-2">
+                                    {/* Timeline Line */}
+                                    <div className="absolute left-[15px] top-2 bottom-4 w-0.5 bg-gray-100 rounded-full"></div>
+
+                                    {meetings.length > 0 ? (
+                                        meetings.slice(0, 4).map((meeting, idx) => {
+                                            const isPast = new Date(meeting.dateTime) < new Date();
+                                            return (
+                                                <div key={meeting.id} className={`relative pl-8 group ${isPast ? 'opacity-50' : ''}`}>
+                                                    <div className={`absolute left-[11px] top-1.5 h-2.5 w-2.5 rounded-full ring-4 ring-white z-10 ${
+                                                        idx === 0 && !isPast ? 'bg-brand-500' : 'bg-gray-300'
+                                                    }`}></div>
+                                                    
+                                                    <div>
+                                                        <span className="text-xs font-mono font-bold text-gray-400 mb-1 block">
+                                                            {new Date(meeting.dateTime).toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit', timeZone: 'Asia/Kolkata'})}
+                                                        </span>
+                                                        <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 group-hover:border-brand-200 group-hover:bg-white group-hover:shadow-sm transition-all">
+                                                            <h4 className="text-sm font-bold text-gray-900 line-clamp-1">{meeting.title}</h4>
+                                                            {meeting.meetingLink && !isPast && (
+                                                                <a href={meeting.meetingLink} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-brand-600 hover:underline mt-1 block">
+                                                                    Join Call
+                                                                </a>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    ) : (
+                                        <div className="pl-8 py-4 text-sm text-gray-400 italic">
+                                            No meetings scheduled for today.
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                <div className="mt-6 pt-6 border-t border-gray-100">
+                                    <Link to="/calendar" className="w-full py-2.5 flex items-center justify-center gap-2 text-sm font-bold text-gray-600 bg-gray-50 hover:bg-gray-100 hover:text-gray-900 rounded-xl transition-colors">
+                                        Open Full Calendar
                                     </Link>
+                                </div>
+                            </div>
+
+                            {/* 2. PRODUCTIVITY STATS */}
+                            <div className="bg-brand-900 rounded-[2rem] p-6 text-white relative overflow-hidden shadow-xl">
+                                <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+                                <div className="absolute bottom-0 left-0 w-32 h-32 bg-brand-500/20 rounded-full blur-2xl"></div>
+                                
+                                <div className="relative z-10">
+                                    <h3 className="font-bold text-lg mb-1">Weekly Pulse</h3>
+                                    <p className="text-brand-200 text-xs mb-6">Task completion rate based on your activity.</p>
+                                    
+                                    <div className="flex items-end gap-2 mb-2">
+                                        <span className="text-4xl font-extrabold tracking-tight">{efficiency}%</span>
+                                        <span className="text-sm font-medium text-brand-300 mb-1.5">Efficiency</span>
+                                    </div>
+                                    
+                                    <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden mb-4">
+                                        <div 
+                                            className="bg-gradient-to-r from-brand-300 to-white h-full rounded-full" 
+                                            style={{ width: `${efficiency}%` }}
+                                        ></div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
+                                            <p className="text-xs text-brand-200 uppercase font-bold tracking-wider">Done</p>
+                                            <p className="text-xl font-bold">{completedTasks.length}</p>
+                                        </div>
+                                        <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
+                                            <p className="text-xs text-brand-200 uppercase font-bold tracking-wider">Active</p>
+                                            <p className="text-xl font-bold">{activeTasks.length}</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
                         </div>
                     </div>
-
                 </main>
             </div>
         </div>

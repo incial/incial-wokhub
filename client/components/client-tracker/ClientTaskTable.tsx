@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Task, TaskPriority, TaskStatus, TaskType } from '../../types';
-import { formatDate } from '../../utils';
+import { formatDate, isRecentlyUpdated } from '../../utils';
 import { Edit2, Trash2, Paperclip, Check, ChevronDown, ExternalLink, Layout } from 'lucide-react';
 
 interface ClientTaskTableProps {
@@ -111,8 +111,15 @@ export const ClientTaskTable: React.FC<ClientTaskTableProps> = ({ tasks, onEdit,
                 </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-                {tasks.map(task => (
-                    <tr key={task.id} className="group hover:bg-gray-50/80 transition-all duration-200">
+                {tasks.map(task => {
+                    const isCompleted = (task.status === 'Completed' || task.status === 'Done');
+                    const shouldAnimate = isCompleted && isRecentlyUpdated(task.lastUpdatedAt, 10);
+
+                    return (
+                    <tr 
+                        key={task.id} 
+                        className={`group hover:bg-gray-50/80 transition-all duration-200 ${shouldAnimate ? 'animate-task-complete' : ''}`}
+                    >
                         {/* Task Name */}
                         <td className="px-6 py-3 sticky left-0 bg-white group-hover:bg-gray-50/80 transition-all border-r border-transparent group-hover:border-gray-100 z-10">
                              <div className="flex flex-col gap-1">
@@ -211,7 +218,7 @@ export const ClientTaskTable: React.FC<ClientTaskTableProps> = ({ tasks, onEdit,
                              )}
                         </td>
                     </tr>
-                ))}
+                )})}
                 {tasks.length === 0 && (
                      <tr>
                         <td colSpan={8} className="px-6 py-16 text-center text-gray-400 text-sm">

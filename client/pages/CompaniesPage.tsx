@@ -124,11 +124,9 @@ export const CompaniesPage: React.FC = () => {
       setCrmEntries(prev => prev.map(e => e.id === company.id ? updatedEntry : e));
 
       try {
-          await companiesApi.update(company.id, { 
-              status: newStatus,
-              lastUpdatedBy: user?.name || 'Unknown',
-              lastUpdatedAt: new Date().toISOString()
-          });
+          // SEND FULL OBJECT, NOT PARTIAL. 
+          // PUT requests often replace the entire resource or validate required fields.
+          await companiesApi.update(company.id, updatedEntry);
           showToast(`Status updated to ${newStatus}`, "success");
       } catch (e) {
           fetchData();

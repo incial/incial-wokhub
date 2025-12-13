@@ -2,7 +2,7 @@ package com.incial.crm.controller;
 
 import com.incial.crm.dto.MeetingDto;
 import com.incial.crm.service.MeetingService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,10 +13,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/meetings")
 @CrossOrigin(origins = "*")
+@RequiredArgsConstructor
 public class MeetingController {
 
-    @Autowired
-    private MeetingService meetingService;
+    private final MeetingService meetingService;
 
     @GetMapping("/all")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_EMPLOYEE', 'ROLE_SUPER_ADMIN')")

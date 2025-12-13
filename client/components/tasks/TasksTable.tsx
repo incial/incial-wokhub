@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Task, TaskPriority, TaskStatus } from '../../types';
-import { formatDate, getTaskPriorityStyles, getTaskStatusStyles } from '../../utils';
+import { formatDate, getTaskPriorityStyles, getTaskStatusStyles, isRecentlyUpdated } from '../../utils';
 import { Edit2, Trash2, ChevronDown, Calendar, Check, Building } from 'lucide-react';
 
 interface TasksTableProps {
@@ -143,9 +143,14 @@ export const TasksTable: React.FC<TasksTableProps> = ({ data, companyMap, onEdit
             <tbody className="divide-y divide-gray-50">
                 {data.map(task => {
                     const clientName = (task.companyId && companyMap) ? companyMap[task.companyId] : null;
-                    
+                    const isCompleted = (task.status === 'Completed' || task.status === 'Done');
+                    const shouldAnimate = isCompleted && isRecentlyUpdated(task.lastUpdatedAt, 10);
+
                     return (
-                    <tr key={task.id} className="group hover:bg-gray-50/50 transition-colors">
+                    <tr 
+                        key={task.id} 
+                        className={`group hover:bg-gray-50/50 transition-colors ${shouldAnimate ? 'animate-task-complete' : ''}`}
+                    >
                         {/* Name */}
                         <td className="px-6 py-3">
                             <button onClick={() => onEdit(task)} className="text-sm font-bold text-gray-800 hover:text-brand-600 hover:underline text-left truncate max-w-xs block">

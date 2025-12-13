@@ -3,7 +3,7 @@ package com.incial.crm.service;
 import com.incial.crm.dto.CrmEntryDto;
 import com.incial.crm.entity.CrmEntry;
 import com.incial.crm.repository.CrmEntryRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -12,10 +12,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class CrmService {
 
-    @Autowired
-    private CrmEntryRepository crmEntryRepository;
+    private final CrmEntryRepository crmEntryRepository;
 
     public Map<String, List<CrmEntryDto>> getAllEntries() {
         List<CrmEntry> entries = crmEntryRepository.findAll();

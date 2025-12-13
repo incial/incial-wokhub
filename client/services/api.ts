@@ -86,6 +86,18 @@ const cleanPayload = (data: any): any => {
     return data;
 };
 
+// Helper to check if current user is Admin
+const isAdminUser = (): boolean => {
+    try {
+        const userStr = localStorage.getItem('user');
+        if (!userStr) return false;
+        const user = JSON.parse(userStr);
+        return user.role === 'ROLE_ADMIN' || user.role === 'ROLE_SUPER_ADMIN';
+    } catch (e) {
+        return false;
+    }
+};
+
 // ============================================================================
 // 🔌 API ENDPOINTS
 // ============================================================================
@@ -135,6 +147,21 @@ export const crmApi = {
 // --- COMPANIES API (Accessible by Employees) ---
 export const companiesApi = {
   getAll: async (): Promise<CRMEntry[]> => {
+    // 1. Prefer CRM endpoint for Admins to avoid potential 500s on /companies/all
+    if (isAdminUser()) {
+        try {
+            const res = await api.get("/crm/all");
+            const data = res.data.crmList || [];
+            return data.map((item: any) => ({
+                ...item,
+                company: item.name || item.company
+            }));
+        } catch (e) {
+            console.warn("Admin CRM fetch failed, falling back to companies endpoint...", e);
+        }
+    }
+
+    // 2. Default / Employee Path
     try {
         const res = await api.get("/companies/all");
         // Map backend response if needed (e.g. name -> company) to match CRMEntry interface
@@ -143,17 +170,51 @@ export const companiesApi = {
             ...item,
             company: item.name || item.company // Handle backend sending 'name' instead of 'company'
         }));
-    } catch (error) { throw handleApiError(error); }
+    } catch (error: any) { 
+        // 3. Fallback Strategy: If companies endpoint is broken (500) or missing (404),
+        // try to fetch via CRM endpoint if user has permissions.
+        console.warn("Primary companies endpoint failed, attempting fallback to CRM...", error.message);
+        try {
+            const res = await api.get("/crm/all");
+            const data = res.data.crmList || [];
+            return data.map((item: any) => ({
+                ...item,
+                company: item.name || item.company
+            }));
+        } catch (fallbackError) {
+            // If fallback also fails, throw original error
+            throw handleApiError(error); 
+        }
+    }
   },
   
-  // Note: Create/Update/Delete typically handled via CRM endpoints for consistency, 
-  // but if needed for employees they can be added here mirroring backend routes.
   update: async (id: number, data: Partial<CRMEntry>): Promise<CRMEntry> => {
+     const payload = cleanPayload(data);
+
+     // 1. Prefer CRM endpoint for Admins
+     if (isAdminUser()) {
+        try {
+            const res = await api.put(`/crm/update/${id}`, payload);
+            return { ...res.data, company: res.data.name || res.data.company };
+        } catch (e) {
+             console.warn("Admin CRM update failed, falling back to companies endpoint...", e);
+        }
+     }
+
+     // 2. Default / Employee Path
      try {
-        const payload = cleanPayload(data);
         const res = await api.put(`/companies/update/${id}`, payload);
         return { ...res.data, company: res.data.name || res.data.company };
-     } catch (error) { throw handleApiError(error); }
+     } catch (error: any) { 
+         // 3. Fallback to CRM update if companies update fails
+         console.warn("Primary companies update failed, attempting fallback to CRM...", error.message);
+         try {
+            const res = await api.put(`/crm/update/${id}`, payload);
+            return { ...res.data, company: res.data.name || res.data.company };
+         } catch (fallbackError) {
+            throw handleApiError(error);
+         }
+     }
   }
 };
 

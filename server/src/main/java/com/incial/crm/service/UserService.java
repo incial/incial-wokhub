@@ -3,7 +3,7 @@ package com.incial.crm.service;
 import com.incial.crm.dto.UserDto;
 import com.incial.crm.entity.User;
 import com.incial.crm.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -13,20 +13,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
     public List<UserDto> getAllUsers() {
         return userRepository.findAll().stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
-
-    public List<UserDto> getLeaderboard() {
-        return userRepository.findAll().stream()
-                .sorted(Comparator.comparing(User::getTasksCompleted).reversed())
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }

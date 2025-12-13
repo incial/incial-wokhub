@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -19,17 +20,17 @@
         extend: {
           colors: {
             brand: {
-               50: '#eff6ff',
-                100: '#dbeafe',
-                200: '#bfdbfe',
-                300: '#93c5fd',
-                400: '#60a5fa',
-                500: '#3b82f6',
-                600: '#2563eb',
-                700: '#1d4ed8',
-                800: '#1e40af',
-                900: '#1e3a8a',
-                950: '#172554',
+              50: '#eff6ff',
+              100: '#dbeafe',
+              200: '#bfdbfe',
+              300: '#93c5fd',
+              400: '#60a5fa',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+              950: '#172554',
             }
           },
           fontFamily: {
@@ -46,6 +47,7 @@
       background-color: #f8fafc;
     }
 
+    /* Custom Scrollbar for Table */
     .custom-scrollbar::-webkit-scrollbar {
       height: 6px;
       width: 6px;
@@ -64,13 +66,43 @@
       background: #94a3b8;
     }
 
+    /* Hide scrollbar utility */
     .no-scrollbar::-webkit-scrollbar {
       display: none;
     }
 
     .no-scrollbar {
       -ms-overflow-style: none;
+      /* IE and Edge */
       scrollbar-width: none;
+      /* Firefox */
+    }
+
+    /* Task Completion Animation */
+    @keyframes task-success {
+      0% {
+        background-color: #dcfce7;
+        transform: scale(0.98);
+      }
+
+      50% {
+        background-color: #f0fdf4;
+        transform: scale(1.01);
+      }
+
+      100% {
+        background-color: transparent;
+        transform: scale(1);
+      }
+    }
+
+    .animate-task-complete {
+      animation: task-success 1s ease-out forwards;
+    }
+
+    /* Fix for sticky column background during animation */
+    tr.animate-task-complete>td.sticky {
+      animation: task-success 1s ease-out forwards;
     }
   </style>
 </head>

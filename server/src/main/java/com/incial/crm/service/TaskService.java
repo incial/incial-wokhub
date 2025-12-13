@@ -3,20 +3,18 @@ package com.incial.crm.service;
 import com.incial.crm.dto.TaskDto;
 import com.incial.crm.entity.Task;
 import com.incial.crm.repository.TaskRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class TaskService {
 
-    @Autowired
-    private TaskRepository taskRepository;
-
-    @Autowired
-    private UserService userService;
+    private final TaskRepository taskRepository;
+    private final UserService userService;
 
     public List<TaskDto> getAllTasks() {
         return taskRepository.findAll().stream()
