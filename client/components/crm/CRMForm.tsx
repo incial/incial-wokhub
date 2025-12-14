@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Save, Edit2, User, Phone, Mail, Calendar, Briefcase, FileText, Tag, DollarSign, CheckCircle, Clock, AlertCircle, History, ExternalLink, HardDrive, Linkedin, Instagram, Facebook, Twitter, Globe, Link as LinkIcon, Maximize2, Minimize2, MapPin, Hash, Building } from 'lucide-react';
-import { CRMEntry, SocialLinks, CRMStatus } from '../../types';
+import { CRMEntry, SocialLinks, CRMStatus, User as UserType } from '../../types';
 import { getStatusStyles, formatDate, getFollowUpColor, formatMoney, getWorkTypeStyles, formatDateTime } from '../../utils';
 import { CustomDatePicker } from '../ui/CustomDatePicker';
 import { CustomSelect } from '../ui/CustomSelect';
+import { UserSelect } from '../ui/UserSelect';
 import { usersApi } from '../../services/api';
 
 interface CRMFormProps {
@@ -13,11 +14,6 @@ interface CRMFormProps {
   onSubmit: (data: Partial<CRMEntry>) => void;
   initialData?: CRMEntry;
 }
-
-const LEAD_SOURCES = [
-  'Google Business', 'Direct Call', 'Website', 'Referral', 'Social Media', 
-  'Email Campaign', 'Cold Call', 'Event', 'Partner', 'Direct Mail'
-];
 
 const STATUS_OPTIONS: { label: string; value: CRMStatus }[] = [
     { label: 'Lead', value: 'lead' },
@@ -58,13 +54,13 @@ export const CRMForm: React.FC<CRMFormProps> = ({ isOpen, onClose, onSubmit, ini
   const [formData, setFormData] = useState<Partial<CRMEntry>>({});
   const [mode, setMode] = useState<'view' | 'edit'>('edit');
   const [isNotesExpanded, setIsNotesExpanded] = useState(false);
-  const [assigneeOptions, setAssigneeOptions] = useState<{ label: string; value: string }[]>([]);
+  const [users, setUsers] = useState<UserType[]>([]);
 
   useEffect(() => {
     const fetchUsers = async () => {
         try {
-            const users = await usersApi.getAll();
-            setAssigneeOptions(users.map(u => ({ label: u.name, value: u.name })));
+            const fetchedUsers = await usersApi.getAll();
+            setUsers(fetchedUsers);
         } catch (e) {
             console.error("Failed to fetch assignees", e);
         }
@@ -123,7 +119,6 @@ export const CRMForm: React.FC<CRMFormProps> = ({ isOpen, onClose, onSubmit, ini
 
   const toggleWork = (workLabel: string) => {
       const currentWork = formData.work || [];
-      // Handle legacy object format if present, usually it's string[]
       const cleanWork = currentWork.map((w: any) => typeof w === 'object' ? w.name : w);
       
       const exists = cleanWork.includes(workLabel);
@@ -132,15 +127,6 @@ export const CRMForm: React.FC<CRMFormProps> = ({ isOpen, onClose, onSubmit, ini
           setFormData(prev => ({ ...prev, work: cleanWork.filter(w => w !== workLabel) }));
       } else {
           setFormData(prev => ({ ...prev, work: [...cleanWork, workLabel] }));
-      }
-  };
-
-  const toggleLeadSource = (source: string) => {
-      const current = formData.leadSources || [];
-      if (current.includes(source)) {
-          setFormData(prev => ({ ...prev, leadSources: current.filter(s => s !== source) }));
-      } else {
-          setFormData(prev => ({ ...prev, leadSources: [...current, source] }));
       }
   };
 
@@ -346,7 +332,13 @@ export const CRMForm: React.FC<CRMFormProps> = ({ isOpen, onClose, onSubmit, ini
                 <CustomSelect label="Status" value={formData.status || 'lead'} onChange={(val) => setFormData({...formData, status: val as CRMStatus})} options={STATUS_OPTIONS} />
             </div>
             <div className="col-span-2 md:col-span-1">
-                <CustomSelect label="Assigned To" value={formData.assignedTo || ''} onChange={(val) => setFormData({...formData, assignedTo: val})} options={assigneeOptions} placeholder="Unassigned" />
+                <UserSelect 
+                    label="Assigned To" 
+                    value={formData.assignedTo || ''} 
+                    onChange={(val) => setFormData({...formData, assignedTo: val})} 
+                    users={users}
+                    placeholder="Unassigned"
+                />
             </div>
             <div className="col-span-2 md:col-span-1">
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Deal Value (₹)</label>
