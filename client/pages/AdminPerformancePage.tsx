@@ -10,6 +10,7 @@ import { useToast } from '../context/ToastContext';
 interface UserStats {
   name: string;
   role: string;
+  avatarUrl?: string;
   total: number;
   completed: number;
   inProgress: number;
@@ -32,7 +33,12 @@ export const AdminPerformancePage: React.FC = () => {
         ]);
         
         const userRoleMap: Record<string, string> = {};
-        users.forEach(u => userRoleMap[u.name] = u.role);
+        const userAvatarMap: Record<string, string> = {};
+        
+        users.forEach(u => {
+            userRoleMap[u.name] = u.role;
+            if (u.avatarUrl) userAvatarMap[u.name] = u.avatarUrl;
+        });
         
         const userMap: Record<string, Task[]> = {};
         tasks.forEach(task => {
@@ -56,6 +62,7 @@ export const AdminPerformancePage: React.FC = () => {
             return {
                 name: user,
                 role: formattedRole,
+                avatarUrl: userAvatarMap[user],
                 total,
                 completed,
                 inProgress,
@@ -191,9 +198,13 @@ export const AdminPerformancePage: React.FC = () => {
 
                                         <div className="mt-6 mb-4 relative">
                                             <div className={`p-1.5 rounded-full bg-white shadow-sm ring-4 ${config.ringColor}`}>
-                                                <div className="h-20 w-20 rounded-full bg-gradient-to-tr from-gray-100 to-gray-200 flex items-center justify-center text-2xl font-bold text-gray-700 uppercase tracking-tighter">
-                                                    {user.name.slice(0, 2)}
-                                                </div>
+                                                {user.avatarUrl ? (
+                                                    <img src={user.avatarUrl} alt={user.name} className="h-20 w-20 rounded-full object-cover" />
+                                                ) : (
+                                                    <div className="h-20 w-20 rounded-full bg-gradient-to-tr from-gray-100 to-gray-200 flex items-center justify-center text-2xl font-bold text-gray-700 uppercase tracking-tighter">
+                                                        {user.name.slice(0, 2)}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
 
@@ -250,9 +261,13 @@ export const AdminPerformancePage: React.FC = () => {
                                                 <div className={`text-sm font-bold w-6 text-center ${idx < 3 ? 'text-yellow-500 scale-110' : 'text-gray-300'}`}>
                                                     {idx < 3 ? <Star className="h-4 w-4 fill-current" /> : `#${idx + 1}`}
                                                 </div>
-                                                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-sm font-bold text-gray-600 shadow-sm border border-white">
-                                                    {user.name.charAt(0)}
-                                                </div>
+                                                {user.avatarUrl ? (
+                                                    <img src={user.avatarUrl} alt={user.name} className="h-10 w-10 rounded-xl object-cover shadow-sm border border-white" />
+                                                ) : (
+                                                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-sm font-bold text-gray-600 shadow-sm border border-white">
+                                                        {user.name.charAt(0)}
+                                                    </div>
+                                                )}
                                                 <div>
                                                     <span className="font-bold text-gray-900 block text-sm">{user.name}</span>
                                                     <span className="text-[10px] font-semibold text-brand-600 bg-brand-50 px-2 py-0.5 rounded border border-brand-100 uppercase tracking-wide">

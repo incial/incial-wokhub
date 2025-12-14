@@ -5,7 +5,7 @@ import { Sidebar } from '../components/layout/Sidebar';
 import { Link } from 'react-router-dom';
 import { crmApi, tasksApi } from '../services/api';
 import { CRMEntry } from '../types';
-import { ListTodo, Search, Building, Clock, PieChart, ArrowRight, CheckCircle2, AlertTriangle, Briefcase, User } from 'lucide-react';
+import { ListTodo, Search, Building, Clock, PieChart, ArrowRight, CheckCircle2, AlertTriangle, Briefcase, User, ImageIcon } from 'lucide-react';
 
 interface ClientWithStats extends CRMEntry {
     totalTasks: number;
@@ -148,7 +148,7 @@ export const ClientTrackerPage: React.FC = () => {
                             <div className="flex items-start justify-between gap-3 mb-6">
                                 <div className="flex items-center gap-4 flex-1 min-w-0">
                                     {/* Logo Container */}
-                                    <div className="h-14 w-14 flex-shrink-0 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center text-xl font-bold text-gray-700 overflow-hidden group-hover:border-brand-200 transition-colors shadow-sm relative">
+                                    <div className="h-14 w-14 flex-shrink-0 rounded-2xl bg-white border border-gray-100 flex items-center justify-center overflow-hidden group-hover:border-brand-200 transition-colors shadow-sm relative">
                                         {client.companyImageUrl ? (
                                             <img 
                                                 src={client.companyImageUrl} 
@@ -157,12 +157,13 @@ export const ClientTrackerPage: React.FC = () => {
                                                 onError={(e) => {
                                                     e.currentTarget.style.display = 'none';
                                                     e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                                    e.currentTarget.nextElementSibling?.classList.add('flex');
                                                 }}
                                             />
                                         ) : null}
-                                        {/* Fallback Initial - Centered */}
-                                        <div className={`${client.companyImageUrl ? 'hidden' : 'flex'} absolute inset-0 items-center justify-center text-2xl font-black text-gray-400 group-hover:text-brand-600 transition-colors`}>
-                                            {client.company.charAt(0)}
+                                        {/* Fallback Icon - Centered (Shows if no image or error) */}
+                                        <div className={`${client.companyImageUrl ? 'hidden' : 'flex'} absolute inset-0 items-center justify-center text-gray-300 group-hover:text-brand-500 transition-colors`}>
+                                            <Building className="h-7 w-7" />
                                         </div>
                                     </div>
                                     

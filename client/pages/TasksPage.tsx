@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Navbar } from '../components/layout/Navbar';
 import { Sidebar } from '../components/layout/Sidebar';
-import { tasksApi, crmApi } from '../services/api';
+import { tasksApi, crmApi, usersApi } from '../services/api';
 import { Task, TaskFilterState, TaskPriority, TaskStatus } from '../types';
 import { TasksTable } from '../components/tasks/TasksTable';
 import { TasksKanban } from '../components/tasks/TasksKanban';
@@ -19,6 +19,7 @@ export const TasksPage: React.FC = () => {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [companyMap, setCompanyMap] = useState<Record<number, string>>({});
+  const [userAvatarMap, setUserAvatarMap] = useState<Record<string, string>>({});
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
@@ -36,14 +37,23 @@ export const TasksPage: React.FC = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [tasksData, crmData] = await Promise.all([
+      const [tasksData, crmData, usersData] = await Promise.all([
           tasksApi.getAll(),
-          crmApi.getAll()
+          crmApi.getAll(),
+          usersApi.getAll()
       ]);
       setTasks(tasksData);
-      const map: Record<number, string> = {};
-      crmData.crmList.forEach(c => map[c.id] = c.company);
-      setCompanyMap(map);
+      
+      const cMap: Record<number, string> = {};
+      crmData.crmList.forEach(c => cMap[c.id] = c.company);
+      setCompanyMap(cMap);
+
+      const uMap: Record<string, string> = {};
+      usersData.forEach(u => {
+          if (u.avatarUrl) uMap[u.name] = u.avatarUrl;
+      });
+      setUserAvatarMap(uMap);
+
     } catch (err) {
       console.error(err);
     } finally {
@@ -218,6 +228,7 @@ export const TasksPage: React.FC = () => {
                                 <TasksTable 
                                     data={activeTasks} 
                                     companyMap={companyMap}
+                                    userAvatarMap={userAvatarMap}
                                     onEdit={handleEdit} 
                                     onDelete={handleRequestDelete}
                                     onStatusChange={handleStatusChange}
@@ -244,6 +255,7 @@ export const TasksPage: React.FC = () => {
                                                  <TasksTable 
                                                     data={completedTasks} 
                                                     companyMap={companyMap}
+                                                    userAvatarMap={userAvatarMap}
                                                     onEdit={handleEdit} 
                                                     onDelete={handleRequestDelete}
                                                     onStatusChange={handleStatusChange}
@@ -259,6 +271,7 @@ export const TasksPage: React.FC = () => {
                             <div className="h-full p-6 bg-gray-50/30">
                                 <TasksKanban 
                                     tasks={filteredTasks} 
+                                    userAvatarMap={userAvatarMap}
                                     onEdit={handleEdit} 
                                     onStatusChange={handleStatusChange} 
                                 />
