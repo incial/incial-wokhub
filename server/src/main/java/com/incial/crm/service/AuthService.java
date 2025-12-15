@@ -25,6 +25,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -228,28 +229,37 @@ public class AuthService {
                 .build();
     }
 
+    @Transactional
     public ApiResponse changePassword(ChangePasswordRequest request) {
-        // Verify OTP first
-        boolean isValid = otpService.verifyOtp(request.getEmail(), request.getOtp());
+
+        // 1. Verify OTP (must be transactional)
+        boolean isValid = otpService.verifyOtp(
+                request.getEmail(),
+                request.getOtp()
+        );
 
         if (!isValid) {
             throw new RuntimeException("Invalid or expired OTP");
         }
 
-        // Find user and update password
+        // 2. Fetch user
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        // 3. Update password
+        user.setPasswordHash(
+                passwordEncoder.encode(request.getNewPassword())
+        );
+        // no save needed if User is managed, but save is fine
         userRepository.save(user);
 
-        // Delete OTPs after successful password change
-        otpService.deleteOtpsByEmail(request.getEmail());
+
 
         return ApiResponse.builder()
                 .statusCode(200)
                 .message("Password changed successfully")
                 .build();
     }
+
 
 }

@@ -16,49 +16,62 @@ public class OtpService {
 
     private final OtpRepository otpRepository;
     private final EmailService emailService;
+
     private static final SecureRandom random = new SecureRandom();
     private static final int OTP_EXPIRY_MINUTES = 10;
 
+    /**
+     * Generates a new OTP.
+     * Deletes old OTPs and inserts new one in the SAME transaction.
+     */
+    @Transactional
     public String generateAndSendOtp(String email) {
-        // Delete any existing OTPs for this email
-        deleteOtpsByEmail(email);
 
-        // Generate a 6-digit OTP
-        String otpCode = String.format("%06d", random.nextInt(1000000));
+        // delete must be inside transaction
+        otpRepository.deleteByEmail(email);
 
-        // Save OTP to database
+        String otpCode = String.format("%06d", random.nextInt(1_000_000));
+
         Otp otp = Otp.builder()
                 .email(email)
                 .otpCode(otpCode)
                 .expiresAt(LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES))
                 .verified(false)
                 .build();
+
         otpRepository.save(otp);
 
-        // Send OTP via email
+        // external IO AFTER DB consistency is guaranteed
         emailService.sendOtpEmail(email, otpCode);
 
         return otpCode;
     }
 
-    public boolean verifyOtp(String email, String otpCode) {
-        Optional<Otp> otpOptional = otpRepository.findByEmailAndOtpCodeAndVerifiedFalseAndExpiresAtAfter(
-                email, otpCode, LocalDateTime.now());
-
-        if (otpOptional.isPresent()) {
-            Otp otp = otpOptional.get();
-            otp.setVerified(true);
-            otpRepository.save(otp);
-            return true;
-        }
-        return false;
-    }
-
+    /**
+     * Verifies OTP atomically.
+     */
     @Transactional
-    public void deleteOtpsByEmail(String email) {
-        otpRepository.deleteByEmail(email);
+    public boolean verifyOtp(String email, String otpCode) {
+
+        Optional<Otp> otpOptional =
+                otpRepository.findByEmailAndOtpCodeAndVerifiedFalseAndExpiresAtAfter(
+                        email, otpCode, LocalDateTime.now()
+                );
+
+        if (otpOptional.isEmpty()) {
+            return false;
+        }
+
+        Otp otp = otpOptional.get();
+        otp.setVerified(true);
+
+        // no need to call save explicitly (managed entity)
+        return true;
     }
 
+    /**
+     * Scheduled / manual cleanup
+     */
     @Transactional
     public void deleteExpiredOtps() {
         otpRepository.deleteByExpiresAtBefore(LocalDateTime.now());
