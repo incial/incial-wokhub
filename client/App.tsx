@@ -19,6 +19,7 @@ import { MyDashboardPage } from './pages/MyDashboardPage';
 import { ClientPortalPage } from './pages/ClientPortalPage';
 import { GamePage } from './pages/GamePage';
 import { ProfilePage } from './pages/ProfilePage';
+import { SettingsPage } from './pages/SettingsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { UnauthorizedPage } from './pages/UnauthorizedPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
@@ -163,11 +164,18 @@ const AppRoutes = () => {
                     </OperationalRoute>
                 } />
 
-                {/* Profile (Accessible by all logged in users) */}
+                {/* Profile & Settings (Accessible by all logged in users) */}
                 <Route path="/profile" element={
                     <PrivateRoute>
                         <ProfilePage />
                     </PrivateRoute>
+                } />
+                
+                {/* Settings - SUPER ADMIN ONLY */}
+                <Route path="/settings" element={
+                    <SuperAdminRoute>
+                        <SettingsPage />
+                    </SuperAdminRoute>
                 } />
 
                 {/* CRM (Super Admin + Admin) */}

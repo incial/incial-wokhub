@@ -1,0 +1,67 @@
+version: 2.1
+
+orbs:
+  aws-cli: circleci/aws-cli@5.1.0
+
+jobs:
+  build-and-push:
+    docker:
+      - image: cimg/openjdk:21.0
+    environment:
+      IMAGE_TAG: latest
+    steps:
+      - checkout
+
+      # Build Spring Boot JAR
+      - run:
+          name: Build JAR
+          command: |
+            mvn clean package -DskipTests
+
+      # Enable Docker
+      - setup_remote_docker:
+          docker_layer_caching: true
+
+      # AWS CLI setup
+      - aws-cli/setup:
+          aws-access-key-id: AWS_ACCESS_KEY_ID
+          aws-secret-access-key: AWS_SECRET_ACCESS_KEY
+          aws-region: AWS_REGION
+
+      # Login to ECR
+      - run:
+          name: Login to Amazon ECR
+          command: |
+            aws ecr get-login-password \
+              --region $AWS_REGION \
+            | docker login \
+              --username AWS \
+              --password-stdin \
+              $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+      # Build Docker image
+      - run:
+          name: Build Docker Image
+          command: |
+            docker build \
+              -t $ECR_REPO_NAME:$IMAGE_TAG .
+
+      # Tag image
+      - run:
+          name: Tag Docker Image
+          command: |
+            docker tag \
+              $ECR_REPO_NAME:$IMAGE_TAG \
+              $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:$IMAGE_TAG
+
+      # Push to ECR
+      - run:
+          name: Push Docker Image
+          command: |
+            docker push \
+              $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:$IMAGE_TAG
+
+workflows:
+  build:
+    jobs:
+      - build-and-push

@@ -155,3 +155,36 @@ export interface MeetingFilterState {
   status: string;
   dateRangeStart: string;
 }
+
+// --- INVOICE MODULE TYPES ---
+export type InvoiceStatus = 'Paid' | 'Pending' | 'Overdue' | 'Draft';
+
+export interface InvoiceItem {
+  id: string;
+  description: string;
+  quantity: number;
+  rate: number;
+  amount: number;
+}
+
+export interface Invoice {
+  id: string;
+  number: string;
+  date: string;
+  dueDate: string;
+  
+  // Client Details
+  clientName: string;
+  clientCompany: string;
+  clientAddress?: string;
+  clientEmail?: string;
+
+  // Items
+  items: InvoiceItem[];
+  subtotal: number;
+  tax: number; // Percentage
+  total: number;
+  
+  status: InvoiceStatus;
+  notes?: string;
+}
