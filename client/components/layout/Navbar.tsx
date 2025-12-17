@@ -248,16 +248,18 @@ export const Navbar: React.FC = () => {
                                 My Profile
                             </Link>
                             
-                            <Link 
-                                to="/settings" 
-                                onClick={() => setIsProfileOpen(false)} 
-                                className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-700 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-colors group"
-                            >
-                                <div className="p-1.5 rounded-lg bg-gray-100 text-gray-500 group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors">
-                                    <Settings className="h-4 w-4" />
-                                </div>
-                                Settings
-                            </Link>
+                            {isSuperAdmin && (
+                                <Link 
+                                    to="/settings" 
+                                    onClick={() => setIsProfileOpen(false)} 
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-700 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-colors group"
+                                >
+                                    <div className="p-1.5 rounded-lg bg-gray-100 text-gray-500 group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors">
+                                        <Settings className="h-4 w-4" />
+                                    </div>
+                                    Settings
+                                </Link>
+                            )}
 
                             <Link 
                                 to="/break" 
