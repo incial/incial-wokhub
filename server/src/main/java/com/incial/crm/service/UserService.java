@@ -1,8 +1,6 @@
 package com.incial.crm.service;
 
-import com.incial.crm.dto.CrmEntryDto;
 import com.incial.crm.dto.UserDto;
-import com.incial.crm.entity.CrmEntry;
 import com.incial.crm.entity.User;
 import com.incial.crm.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -10,8 +8,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -54,18 +52,9 @@ public class UserService {
                 .tasksCompleted(entity.getTasksCompleted())
                 .googleId(entity.getGoogleId())
                 .avatarUrl(entity.getAvatarUrl())
+                .clientCrmId(entity.getClientCrmId())
                 .createdAt(entity.getCreatedAt())
                 .build();
-    }
-
-    public Void deleteUser(Long id) {
-
-        Optional<User> user = userRepository.findById(id);
-
-        if(user.isPresent()){
-            userRepository.deleteById(id);
-        }
-        return null;
     }
 
     public static String getCurrentUsername() {
@@ -76,17 +65,4 @@ public class UserService {
         return authentication.getName();
     }
 
-
-    public UserDto updateUserRole(UserDto userDto, Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
-
-        updateEntityFromDto(user, userDto);
-        User updated = userRepository.save(user);
-        return convertToDto(updated);
-    }
-
-    private void updateEntityFromDto(User user, UserDto dto) {
-        if (dto.getRole() != null) user.setRole(dto.getRole());
-    }
 }

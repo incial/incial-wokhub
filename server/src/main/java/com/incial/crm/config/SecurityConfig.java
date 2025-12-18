@@ -49,9 +49,11 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
 
+                        .requestMatchers("/api/v1/crm/my-crm").hasAuthority("ROLE_CLIENT")
                         .requestMatchers("/api/v1/crm/**").hasAnyAuthority(
                                 "ROLE_ADMIN", "ROLE_EMPLOYEE", "ROLE_SUPER_ADMIN"
                         )
+                        .requestMatchers("/api/v1/tasks/client-tasks").hasAuthority("ROLE_CLIENT")
                         .requestMatchers("/api/v1/tasks/**").hasAnyAuthority(
                                 "ROLE_ADMIN", "ROLE_EMPLOYEE", "ROLE_SUPER_ADMIN"
                         )

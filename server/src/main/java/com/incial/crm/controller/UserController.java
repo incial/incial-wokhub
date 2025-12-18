@@ -42,17 +42,4 @@ public class UserController {
     public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getUserById(id));
     }
-
-    @DeleteMapping("/delete/{id}")
-    @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN')")
-    public ResponseEntity<Void> deleteUser(@PathVariable  Long id){
-        return ResponseEntity.ok(userService.deleteUser(id));
-    }
-
-    @PutMapping("/update/{id}")
-    @PreAuthorize("hasAnyAuthority('ROLE_SUPER_ADMIN')")
-    public ResponseEntity<UserDto> updateUser(@RequestBody UserDto user , @PathVariable Long id){
-        return ResponseEntity.ok(userService.updateUserRole(user,id));
-    }
-
 }
