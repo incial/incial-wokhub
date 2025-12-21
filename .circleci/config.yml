@@ -7,10 +7,8 @@ jobs:
   build-and-deploy:
     docker:
       - image: cimg/openjdk:17.0
-
     environment:
       IMAGE_TAG: << pipeline.git.revision >>
-
     steps:
       - checkout
 
@@ -35,7 +33,7 @@ jobs:
       - aws-cli/setup
 
       # -----------------------------
-      # Login to Amazon ECR
+      # Login to AWS ECR
       # -----------------------------
       - run:
           name: Login to Amazon ECR
@@ -47,7 +45,7 @@ jobs:
                 ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
 
       # -----------------------------
-      # Build & Push ARM64 Docker Image (IMMUTABLE)
+      # Build & Push ARM64 Docker Image
       # -----------------------------
       - run:
           name: Build and Push ARM64 image
@@ -57,11 +55,12 @@ jobs:
 
             docker buildx build \
               --platform linux/arm64 \
+              -t ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}:latest \
               -t ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}:${CIRCLE_SHA1:0:7} \
               --push .
 
       # -----------------------------
-      # Deploy to EC2 via SSM (IMMUTABLE TAG)
+      # Deploy to EC2 via SSM
       # -----------------------------
       - run:
           name: Deploy via AWS SSM
@@ -71,15 +70,14 @@ jobs:
               --document-name "AWS-RunShellScript" \
               --comment "Deploy backend" \
               --parameters commands="[
-                \"docker pull ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}:${CIRCLE_SHA1:0:7}\",
+                \"docker pull ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}:latest\",
                 \"docker stop incial-backend || true\",
                 \"docker rm incial-backend || true\",
-                \"docker run -d \
-                   --name incial-backend \
+                \"docker run -d --name incial-backend \
                    --env-file /home/ec2-user/incial.env \
                    --restart unless-stopped \
                    -p 8080:8080 \
-                   ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}:${CIRCLE_SHA1:0:7}\"
+                   ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}:latest\"
               ]"
 
 workflows:
