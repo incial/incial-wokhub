@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Users, Briefcase, Settings, PieChart, ChevronRight, CheckSquare, ListTodo, BarChart2, Calendar, LayoutDashboard, Home, Command, Shield } from 'lucide-react';
+import { Users, Briefcase, PieChart, ChevronRight, CheckSquare, ListTodo, BarChart2, Calendar, LayoutDashboard, Home, Shield } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useLayout } from '../../context/LayoutContext';
@@ -15,7 +15,6 @@ const NavItem = ({ icon: Icon, label, to, active, collapsed }: { icon: any, labe
         : 'text-slate-400 hover:text-white hover:bg-white/5'
     }`}
   >
-    {/* Subtle Inner Highlight for Active State */}
     {active && (
         <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-white/10 to-transparent pointer-events-none" />
     )}
@@ -52,35 +51,33 @@ export const Sidebar: React.FC = () => {
     const role = user?.role;
     const isSuperAdmin = role === 'ROLE_SUPER_ADMIN';
     const isAdmin = role === 'ROLE_ADMIN' || isSuperAdmin;
-    const isEmployee = role === 'ROLE_EMPLOYEE' || isAdmin; // Employees and above
+    const isEmployee = role === 'ROLE_EMPLOYEE' || isAdmin;
     const isClient = role === 'ROLE_CLIENT';
 
   return (
     <aside 
         className={`${
             isSidebarCollapsed ? 'w-[5.5rem]' : 'w-[19rem]'
-        } bg-[#0B1121] border-r border-slate-800/60 flex flex-col h-screen sticky top-0 z-[99] hidden md:flex flex-shrink-0 shadow-2xl transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1)`}
+        } bg-[#0B1121] border-r border-slate-800/60 flex flex-col h-screen sticky top-0 z-[99] hidden md:flex flex-shrink-0 shadow-2xl transition-all duration-500 ease-in-out`}
     >
-      {/* Header / Logo */}
+      {/* Header / Logo - Custom Branded Specification */}
       <div className={`h-[88px] flex items-center ${isSidebarCollapsed ? 'justify-center' : 'px-8'} transition-all duration-300`}>
-        <div className="flex items-center gap-3.5 overflow-hidden whitespace-nowrap group cursor-pointer">
-            <div className={`relative flex items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 shadow-lg shadow-brand-500/30 transition-all duration-500 ${isSidebarCollapsed ? 'h-10 w-10' : 'h-9 w-9'}`}>
-                <Command className="h-5 w-5 text-white" />
-            </div>
-            
-            {!isSidebarCollapsed && (
-                <div className="flex flex-col opacity-100 transition-opacity duration-300">
-                    <span className="text-white font-bold text-xl tracking-tight leading-none">Incial</span>
-                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-[0.2em] mt-0.5">Workspace</span>
-                </div>
-            )}
-        </div>
+          <div className="flex items-center gap-3.5 overflow-hidden whitespace-nowrap group cursor-pointer">
+              <div className={`relative flex items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 shadow-lg shadow-brand-500/30 transition-all duration-500 ${isSidebarCollapsed ? 'h-10 w-10' : 'h-9 w-9'}`}>
+                  <img src="/logo.png" alt="Incial" className="h-9 w-9 rounded-xl bg-white shadow-lg object-contain p-1 flex-shrink-0" />
+              </div>
+
+              {!isSidebarCollapsed && (
+                  <div className="flex flex-col opacity-100 transition-opacity duration-300">
+                      <span className="text-white font-bold text-xl tracking-tight leading-none">Incial</span>
+                      <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-[0.2em] mt-0.5">Workspace</span>
+                  </div>
+              )}
+          </div>
       </div>
 
       {/* Navigation Content */}
       <div className="flex-1 overflow-y-auto py-6 no-scrollbar space-y-8">
-        
-        {/* Section: Overview */}
         <div>
             {!isSidebarCollapsed ? (
                 <p className="px-8 text-[11px] font-bold text-slate-500/80 uppercase tracking-widest mb-3 transition-opacity opacity-100">Main Menu</p>
@@ -91,20 +88,16 @@ export const Sidebar: React.FC = () => {
             )}
             
             <div className="space-y-0.5">
-                {/* Client Specific View */}
                 {isClient && (
                     <NavItem collapsed={isSidebarCollapsed} icon={Home} label="My Project" to="/portal" active={currentPath === '/portal'} />
                 )}
 
-                {/* Internal Team Views */}
                 {!isClient && (
                     <NavItem collapsed={isSidebarCollapsed} icon={LayoutDashboard} label="Dashboard" to="/dashboard" active={currentPath === '/dashboard'} />
                 )}
                 
-                {/* CRM - Admin & Super Admin Only */}
                 {isAdmin && <NavItem collapsed={isSidebarCollapsed} icon={Users} label="CRM & Leads" to="/crm" active={currentPath === '/crm'} />}
                 
-                {/* Operational - Everyone except Client */}
                 {isEmployee && (
                     <>
                         <NavItem collapsed={isSidebarCollapsed} icon={CheckSquare} label="Tasks Board" to="/tasks" active={currentPath.startsWith('/tasks')} />
@@ -116,7 +109,6 @@ export const Sidebar: React.FC = () => {
             </div>
         </div>
 
-        {/* Section: Analytics - Super Admin Only */}
         {isSuperAdmin && (
             <div className="animate-in fade-in slide-in-from-left-4 duration-500 delay-150">
                 {!isSidebarCollapsed ? (
@@ -134,8 +126,6 @@ export const Sidebar: React.FC = () => {
             </div>
         )}
       </div>
-
-      {/* Footer Settings Link Removed as per request */}
     </aside>
   );
 };
