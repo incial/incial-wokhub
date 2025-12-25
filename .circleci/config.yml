@@ -45,25 +45,25 @@ jobs:
               ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
 
       # -----------------------------
-      # Build & Push ARM64 Image (IMMUTABLE TAG)
+      # Build & Push ARM64 Image (SINGLE IMAGE)
       # -----------------------------
       - run:
           name: Build and Push ARM64 Docker Image
           command: |
             cd server
 
-            docker buildx create --use || true
-
-            docker buildx build \
+            docker build \
               --platform linux/arm64 \
-              -t ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}:${CIRCLE_SHA1:0:7} \
-              --push .
+              -t ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}:${CIRCLE_SHA1:0:7} .
+
+            docker push \
+              ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}:${CIRCLE_SHA1:0:7}
 
       # -----------------------------
-      # Deploy to EC2 via SSM (SAFE ORDER)
+      # Deploy to EC2 via SSM
       # -----------------------------
       - run:
-          name: Deploy to EC2 via SSM (NO DOWNTIME)
+          name: Deploy to EC2 via SSM
           command: |
             aws ssm send-command \
               --region $AWS_REGION \
