@@ -53,17 +53,17 @@ const SessionMonitor: React.FC = () => {
             }
         }, 15 * 60 * 1000); 
 
-        // Auto Logout Check (12 hours)
+        // Auto Logout Check (3 hours)
         const checkSession = () => {
             const loginTimeStr = localStorage.getItem('loginTimestamp');
             if (loginTimeStr) {
                 const loginTime = parseInt(loginTimeStr, 10);
                 const now = Date.now();
-                const twelveHours = 12 * 60 * 60 * 1000;
+                const sessionLimit = 3 * 60 * 60 * 1000; // 3 hours
                 
-                if (now - loginTime > twelveHours) {
+                if (now - loginTime > sessionLimit) {
                     logout();
-                    showToast("Session expired (12h limit). Logged out.", "info");
+                    // Toast notification removed as requested
                 }
             } else {
                 // If missing (legacy login), set it to now to start timer
@@ -229,7 +229,7 @@ const AppRoutes = () => {
                     <OperationalRoute>
                         <ClientDetailsPage />
                     </OperationalRoute>
-                } />
+                } />               
                 <Route path="/settings" element={
                     <OperationalRoute>
                         <SettingsPage />

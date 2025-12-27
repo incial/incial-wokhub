@@ -85,8 +85,8 @@ server:
     enabled: true
     mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
   tomcat:
-    max-threads: 200
-    min-spare-threads: 10
+    max-threads: 50
+    min-spare-threads: 5
 
 # Env Printer Configuration
 env:
