@@ -3,6 +3,7 @@ package com.incial.crm.service;
 import com.incial.crm.entity.Otp;
 import com.incial.crm.repository.OtpRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,10 +23,10 @@ public class OtpService {
 
     /**
      * Generates a new OTP.
-     * Deletes old OTPs and inserts new one in the SAME transaction.
+     * Deletes old OTPs and inserts new one and the same transaction.
      */
     @Transactional
-    public String generateAndSendOtp(String email) {
+    public void generateAndSendOtp(String email) {
 
         // delete must be inside transaction
         otpRepository.deleteByEmail(email);
@@ -44,7 +45,6 @@ public class OtpService {
         // external IO AFTER DB consistency is guaranteed
         emailService.sendOtpEmail(email, otpCode);
 
-        return otpCode;
     }
 
     /**
@@ -65,7 +65,6 @@ public class OtpService {
         Otp otp = otpOptional.get();
         otp.setVerified(true);
 
-        // no need to call save explicitly (managed entity)
         return true;
     }
 
@@ -73,7 +72,8 @@ public class OtpService {
      * Scheduled / manual cleanup
      */
     @Transactional
-    public void deleteExpiredOtps() {
+    @Scheduled(cron = "0 0 0 * * Sat") // Run every hour
+    public void deleteExpiredOtp() {
         otpRepository.deleteByExpiresAtBefore(LocalDateTime.now());
     }
 }

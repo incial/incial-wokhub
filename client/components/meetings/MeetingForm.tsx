@@ -1,9 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Save, Calendar, Clock, Link as LinkIcon, AlignLeft, Video, Maximize2, Minimize2, Trash2, History } from 'lucide-react';
-import { Meeting, MeetingStatus } from '../../types';
+import { Meeting, MeetingStatus, User } from '../../types';
 import { CustomSelect } from '../ui/CustomSelect';
+import { UserSelect } from '../ui/UserSelect';
 import { formatDateTime } from '../../utils';
+import { usersApi } from '../../services/api';
 
 interface MeetingFormProps {
   isOpen: boolean;
@@ -17,26 +19,33 @@ const STATUSES: MeetingStatus[] = ['Scheduled', 'Completed', 'Cancelled', 'Postp
 
 export const MeetingForm: React.FC<MeetingFormProps> = ({ isOpen, onClose, onSubmit, onDelete, initialData }) => {
   const [formData, setFormData] = useState<Partial<Meeting>>({});
+  const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
     if (isOpen) {
-      if (initialData) {
-        const date = new Date(initialData.dateTime);
-        const pad = (n: number) => n.toString().padStart(2, '0');
-        const dtStr = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-        setFormData({ ...initialData, dateTime: dtStr });
-      } else {
-        const now = new Date();
-        const pad = (n: number) => n.toString().padStart(2, '0');
-        setFormData({
-          title: '', status: 'Scheduled', meetingLink: '', notes: '',
-          dateTime: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`
-        });
-      }
+        usersApi.getAll().then(setUsers);
+        if (initialData) {
+            const date = new Date(initialData.dateTime);
+            const pad = (n: number) => n.toString().padStart(2, '0');
+            const dtStr = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+            setFormData({ ...initialData, dateTime: dtStr });
+        } else {
+            const now = new Date();
+            const pad = (n: number) => n.toString().padStart(2, '0');
+            setFormData({
+            title: '', status: 'Scheduled', meetingLink: '', notes: '',
+            assignedTo: 'Unassigned', assigneeId: undefined,
+            dateTime: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`
+            });
+        }
     }
   }, [isOpen, initialData]);
 
   if (!isOpen) return null;
+
+  const handleUserChange = (userId: number, userName: string) => {
+      setFormData(prev => ({ ...prev, assigneeId: userId, assignedTo: userName }));
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/40 backdrop-blur-md p-0 sm:p-4 animate-in fade-in duration-300" onClick={onClose}>
@@ -66,6 +75,10 @@ export const MeetingForm: React.FC<MeetingFormProps> = ({ isOpen, onClose, onSub
                             value={formData.dateTime || ''} onChange={e => setFormData({...formData, dateTime: e.target.value})} />
                     </div>
                     <CustomSelect label="Session Status" value={formData.status || 'Scheduled'} onChange={(val) => setFormData({...formData, status: val as MeetingStatus})} options={STATUSES.map(s => ({ label: s, value: s }))} />
+                </div>
+
+                <div>
+                    <UserSelect label="Organizer / Assignee" value={formData.assigneeId || formData.assignedTo || 'Unassigned'} onChange={handleUserChange} users={users} />
                 </div>
 
                 <div>

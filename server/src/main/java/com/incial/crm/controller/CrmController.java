@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -38,7 +39,7 @@ public class CrmController {
 
     @GetMapping("/my-crm")
     @PreAuthorize("hasAuthority('ROLE_CLIENT')")
-    public ResponseEntity<CrmEntryDto> getClientCrmDetails(org.springframework.security.core.Authentication authentication) {
+    public ResponseEntity<CrmEntryDto> getClientCrmDetails(Authentication authentication) {
         String userEmail = authentication.getName();
         CrmEntryDto details = crmService.getClientCrmDetails(userEmail);
         return ResponseEntity.ok(details);

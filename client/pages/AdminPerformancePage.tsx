@@ -38,15 +38,15 @@ export const AdminPerformancePage: React.FC = () => {
             usersApi.getAll()
         ]);
         
-        // 1. Initialize stats map with ALL users to ensure everyone appears on leaderboard
-        const statsMap: Record<string, UserStats> = {};
+        // 1. Initialize stats map with ALL users using ID as key
+        const statsMap: Record<number, UserStats> = {};
         
         users.forEach(u => {
             const formattedRole = u.role.replace('ROLE_', '').split('_')
                 .map(word => word.charAt(0) + word.slice(1).toLowerCase())
                 .join(' ');
 
-            statsMap[u.name] = {
+            statsMap[u.id] = {
                 id: u.id,
                 name: u.name,
                 email: u.email,
@@ -64,38 +64,30 @@ export const AdminPerformancePage: React.FC = () => {
 
         // 2. Aggregate Task Data
         tasks.forEach(task => {
-            const assignee = task.assignedTo || 'Unassigned';
-            
-            // Handle Unassigned or users not in the user list
-            if (!statsMap[assignee]) {
-                statsMap[assignee] = {
-                    name: assignee,
-                    role: assignee === 'Unassigned' ? 'System' : 'External',
-                    total: 0,
-                    completed: 0,
-                    inProgress: 0,
-                    pending: 0,
-                    completionRate: 0
-                };
+            // Priority: Check assigneeId (Int) first, then try to match by name as fallback
+            let matchedStats: UserStats | undefined;
+
+            if (task.assigneeId && statsMap[task.assigneeId]) {
+                matchedStats = statsMap[task.assigneeId];
+            } else if (task.assignedTo && task.assignedTo !== 'Unassigned') {
+                // Fallback for legacy tasks without ID
+                matchedStats = Object.values(statsMap).find(s => s.name === task.assignedTo);
             }
 
-            const s = statsMap[assignee];
-            s.total++;
-
-            // Categorize Status
-            if (['Completed', 'Done', 'Posted'].includes(task.status)) {
-                s.completed++;
-            } else if (['In Progress', 'In Review'].includes(task.status)) {
-                s.inProgress++;
-            } else if (['Not Started'].includes(task.status)) {
-                s.pending++;
+            if (matchedStats) {
+                matchedStats.total++;
+                if (['Completed', 'Done', 'Posted'].includes(task.status)) {
+                    matchedStats.completed++;
+                } else if (['In Progress', 'In Review'].includes(task.status)) {
+                    matchedStats.inProgress++;
+                } else if (['Not Started'].includes(task.status)) {
+                    matchedStats.pending++;
+                }
             }
-            // 'Dropped' counts towards total but not active buckets
         });
 
-        // 3. Calculate Rates & Convert to Array (Filtering out Unassigned)
+        // 3. Calculate Rates & Convert to Array
         const finalStats = Object.values(statsMap)
-            .filter(s => s.name !== 'Unassigned')
             .map(s => ({
                 ...s,
                 completionRate: s.total > 0 ? (s.completed / s.total) * 100 : 0

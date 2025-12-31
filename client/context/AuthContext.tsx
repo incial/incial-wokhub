@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { User } from '../types';
 
@@ -25,6 +24,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = (newToken: string, newUser: User) => {
     localStorage.setItem('token', newToken);
     localStorage.setItem('user', JSON.stringify(newUser));
+    // Store login timestamp for auto-logout feature
+    localStorage.setItem('loginTimestamp', String(Date.now()));
     setToken(newToken);
     setUser(newUser);
   };
@@ -32,6 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('loginTimestamp');
     setToken(null);
     setUser(null);
     // Optional: Force redirect if needed, but router usually handles it via protected routes

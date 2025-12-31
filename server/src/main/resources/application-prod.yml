@@ -9,10 +9,12 @@ spring:
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
-      minimum-idle: 5
+      minimum-idle: 2
       connection-timeout: 30000
-      idle-timeout: 600000
-      max-lifetime: 1800000
+
+      idle-timeout: 300000        # 5 minutes
+      max-lifetime: 1200000       # 20 minutes (must be < DB timeout)
+      keepalive-time: 300000     # 5 minutes
 
   jpa:
     hibernate:
@@ -83,8 +85,8 @@ server:
     enabled: true
     mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
   tomcat:
-    max-threads: 200
-    min-spare-threads: 10
+    max-threads: 50
+    min-spare-threads: 5
 
 # Env Printer Configuration
 env:

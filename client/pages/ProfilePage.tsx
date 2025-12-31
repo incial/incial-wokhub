@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Navbar } from '../components/layout/Navbar';
 import { Sidebar } from '../components/layout/Sidebar';
@@ -24,11 +25,21 @@ export const ProfilePage: React.FC = () => {
                     tasksApi.getAll(),
                     meetingsApi.getAll()
                 ]);
-                const userTasks = Array.isArray(tasks) ? tasks.filter(t => t.assignedTo === user?.name) : [];
+                
+                const userTasks = Array.isArray(tasks) ? tasks.filter(t => {
+                    if (user?.id && t.assigneeId) return t.assigneeId === user.id;
+                    return t.assignedTo === user?.name;
+                }) : [];
+
+                const userMeetings = Array.isArray(meetings) ? meetings.filter(m => {
+                    if (user?.id && m.assigneeId) return m.assigneeId === user.id;
+                    return m.assignedTo === user?.name;
+                }) : [];
+
                 setStats({
                     tasks: userTasks.length,
                     completed: userTasks.filter(t => t.status === 'Completed' || t.status === 'Done' || t.status === 'Posted').length,
-                    meetings: Array.isArray(meetings) ? meetings.filter(m => m.assignedTo === user?.name).length : 0
+                    meetings: userMeetings.length
                 });
             } catch (e) {
                 console.error("Stats fetch error", e);

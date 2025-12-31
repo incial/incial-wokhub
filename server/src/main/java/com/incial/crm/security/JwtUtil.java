@@ -27,8 +27,8 @@ public class JwtUtil {
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    // Generate token WITH role
-    public String generateToken(String email, String role) {
+    // 🔥 TOKEN GENERATES USING USERNAME ONLY
+    public String generateToken(String username){
         return Jwts.builder()
                 .subject(email)
                 .claim("role", role)

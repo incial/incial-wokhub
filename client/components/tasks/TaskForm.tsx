@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Save, Calendar, User as UserIcon, AlignLeft, Flag, CheckCircle, History, Link as LinkIcon, ExternalLink, Edit2, Clock, Building, Maximize2, Minimize2, Briefcase, FileText, Trash2 } from 'lucide-react';
 import { Task, TaskPriority, TaskStatus, TaskType, User } from '../../types';
 import { CustomDatePicker } from '../ui/CustomDatePicker';
@@ -26,6 +25,8 @@ export const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, i
   const [mode, setMode] = useState<'view' | 'edit'>('view');
   const [users, setUsers] = useState<User[]>([]);
   const [isNotesExpanded, setIsNotesExpanded] = useState(false);
+  
+  // Removed editorRef auto-resize logic
 
   useEffect(() => {
     if (isOpen) {
@@ -40,6 +41,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, i
                 priority: 'Medium', 
                 taskType: 'General',
                 assignedTo: 'Unassigned',
+                assigneeId: undefined,
                 dueDate: new Date().toISOString().split('T')[0],
                 taskLink: '',
                 companyId: undefined // Enforce internal by default
@@ -51,16 +53,46 @@ export const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, i
 
   if (!isOpen) return null;
 
+  const handleUserChange = (userId: number, userName: string) => {
+      setFormData(prev => ({ ...prev, assigneeId: userId, assignedTo: userName }));
+  };
+
   return (
     <>
     {isNotesExpanded && (
-        <div className="fixed inset-0 z-[110] bg-white/95 backdrop-blur-2xl flex flex-col animate-in fade-in duration-300">
-            <div className="flex items-center justify-between p-5 lg:p-8 border-b border-slate-100">
-                <h3 className="text-xl font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-4"><FileText className="h-6 w-6 text-indigo-600" /> Tactical Briefing</h3>
-                <button type="button" onClick={() => setIsNotesExpanded(false)} className="px-6 lg:px-8 py-3 lg:py-4 bg-slate-950 text-white rounded-2xl flex items-center gap-3 text-[11px] font-black uppercase tracking-widest shadow-2xl transition-all active:scale-95"><Minimize2 className="h-4 w-4 text-indigo-400" /> Close Editor</button>
+        <div className="fixed inset-0 z-[200] bg-slate-50 flex flex-col animate-in fade-in duration-300 overflow-hidden">
+            {/* Sticky Header */}
+            <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 shadow-sm flex items-center justify-between px-6 py-4 lg:px-12">
+                <div className="flex items-center gap-4">
+                    <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                        <FileText className="h-5 w-5" />
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em]">Tactical Briefing</h3>
+                        <p className="text-[10px] font-bold text-slate-400">Document Editor Mode</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-3">
+                    <button 
+                        onClick={() => setIsNotesExpanded(false)} 
+                        className="px-6 py-2.5 bg-slate-900 text-white rounded-xl flex items-center gap-2 text-[10px] font-black uppercase tracking-widest shadow-xl transition-all hover:bg-slate-800 active:scale-95"
+                    >
+                        <Minimize2 className="h-3.5 w-3.5 text-indigo-400" /> Done
+                    </button>
+                </div>
             </div>
-            <div className="flex-1 p-6 lg:p-12 max-w-5xl mx-auto w-full">
-                <textarea className="w-full h-full p-4 lg:p-8 text-lg font-medium text-slate-700 bg-transparent border-none focus:ring-0 resize-none outline-none leading-relaxed" placeholder="Detailed tactical requirements..." value={formData.description || ''} onChange={e => setFormData({...formData, description: e.target.value})} autoFocus />
+
+            {/* Scrollable Page Container */}
+            <div className="flex-1 overflow-hidden flex justify-center p-4 lg:p-8 bg-slate-100/50">
+                <div className="bg-white shadow-2xl w-full max-w-4xl h-full rounded-2xl border border-slate-200 flex flex-col relative overflow-hidden">
+                        <textarea 
+                        className="flex-1 w-full h-full p-8 lg:p-12 resize-none outline-none border-none focus:ring-0 overflow-y-auto custom-scrollbar text-lg leading-relaxed text-slate-800 placeholder-slate-300" 
+                        placeholder="Type detailed tactical requirements here..." 
+                        value={formData.description || ''} 
+                        onChange={e => setFormData({ ...formData, description: e.target.value })} 
+                        autoFocus 
+                    />
+                </div>
             </div>
         </div>
     )}
@@ -148,7 +180,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, i
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-gray-100 pb-2 flex items-center gap-2">
                             <AlignLeft className="h-4 w-4" /> Strategic Briefing
                         </p>
-                        <div className="bg-white/40 p-6 lg:p-8 rounded-[2rem] text-slate-600 font-medium leading-relaxed italic whitespace-pre-wrap border border-white text-sm lg:text-base">
+                        <div className="bg-white/40 p-6 lg:p-8 rounded-[2rem] text-slate-600 font-medium leading-relaxed italic whitespace-pre-wrap border border-white text-sm lg:text-base max-h-[250px] overflow-y-auto custom-scrollbar">
                             {formData.description || "No tactical briefing provided for this milestone."}
                         </div>
                     </div>
@@ -180,7 +212,12 @@ export const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, i
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <CustomSelect label="Execution Status" value={formData.status || ''} onChange={(val) => setFormData({...formData, status: val as TaskStatus})} options={STATUSES.map(s => ({ label: s, value: s }))} />
-                        <UserSelect label="Node Assignee" value={formData.assignedTo || 'Unassigned'} onChange={(val) => setFormData({...formData, assignedTo: val})} users={users} />
+                        <UserSelect 
+                            label="Node Assignee" 
+                            value={formData.assigneeId || formData.assignedTo || 'Unassigned'} 
+                            onChange={handleUserChange} 
+                            users={users} 
+                        />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -205,9 +242,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, i
                     <div>
                         <div className="flex items-center justify-between mb-2 ml-1">
                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Tactical Briefing</label>
-                            <button type="button" onClick={() => setIsNotesExpanded(true)} className="text-[9px] font-black text-indigo-600 uppercase tracking-[0.2em] flex items-center gap-2 hover:underline"><Maximize2 className="h-3 w-3" /> Fullscreen</button>
+                            <button type="button" onClick={() => setIsNotesExpanded(true)} className="text-[9px] font-black text-indigo-600 uppercase tracking-[0.2em] flex items-center gap-2 hover:underline"><Maximize2 className="h-3 w-3" /> Document Mode</button>
                         </div>
-                        <textarea className="w-full px-6 lg:px-8 py-6 bg-white border border-gray-200 rounded-[2rem] text-sm font-medium focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all shadow-inner h-32 resize-none"
+                        <textarea className="w-full px-6 lg:px-8 py-6 bg-white border border-gray-200 rounded-[2rem] text-sm font-medium focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all shadow-inner h-32 resize-none custom-scrollbar overflow-y-auto"
                             placeholder="Detail the execution steps..." value={formData.description || ''} onChange={e => setFormData({...formData, description: e.target.value})} />
                     </div>
 

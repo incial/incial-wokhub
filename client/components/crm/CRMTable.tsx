@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { CRMEntry, CRMStatus } from '../../types';
@@ -232,7 +233,7 @@ export const CRMTable: React.FC<CRMTableProps> = ({ data, isLoading, userAvatarM
       <table className="w-full text-left border-collapse whitespace-nowrap">
         <thead>
           <tr className="bg-white border-b border-gray-100">
-            <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest sticky left-0 bg-white z-20 w-72 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">Contact / Company</th>
+            <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest sticky left-0 bg-white z-20 w-72 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">Company / Contact</th>
             <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
             <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Scope</th>
             <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Timeline</th>
@@ -258,9 +259,9 @@ export const CRMTable: React.FC<CRMTableProps> = ({ data, isLoading, userAvatarM
                     />
                     <div className="flex flex-col min-w-0">
                         <button onClick={() => onView(row)} className="font-bold text-gray-900 text-sm group-hover:text-brand-600 transition-colors text-left truncate tracking-tight">
-                            {row.contactName || 'No Name'}
+                            {row.company || 'No Company'}
                         </button>
-                        <span className="text-xs font-medium text-gray-500 truncate max-w-[140px]">{row.company || 'No Company'}</span>
+                        <span className="text-xs font-medium text-gray-500 truncate max-w-[140px]">{row.contactName || 'No Contact'}</span>
                         
                         <div className="flex gap-2 mt-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-1 group-hover:translate-y-0">
                             <a href={`tel:${row.phone}`} className="p-1 rounded-md hover:bg-white text-gray-400 hover:text-brand-600 transition-colors" title={row.phone}><Phone className="h-3 w-3" /></a>

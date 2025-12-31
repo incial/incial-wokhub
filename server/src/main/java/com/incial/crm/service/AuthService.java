@@ -53,7 +53,7 @@ public class AuthService {
             throw new RuntimeException("User with email " + request.getEmail() + " already exists");
         }
 
-        // Set default role if not provided
+        // Set the default role if not provided
         String role = request.getRole();
         if (role == null || role.isEmpty()) {
             role = "ROLE_EMPLOYEE";
@@ -66,7 +66,7 @@ public class AuthService {
             throw new RuntimeException("Invalid role. Must be ADMIN, EMPLOYEE, SUPER_ADMIN, or CLIENT");
         }
 
-        // Create new user (createdAt is set automatically by @PrePersist)
+        // Create new user
         User user = User.builder()
                 .name(request.getName())
                 .email(request.getEmail())
@@ -130,11 +130,8 @@ public class AuthService {
 
     public LoginResponse loginWithGoogle(GoogleLoginRequest request) {
         try {
-            log.debug("Processing Google login request");
-
             // Check if Google Client ID is configured
             if (googleClientId == null || googleClientId.trim().isEmpty()) {
-                log.error("Google Client ID is not configured. Please set the GOOGLE_CLIENT_ID environment variable.");
                 throw new IllegalStateException("Google authentication is not properly configured. Please contact the administrator.");
             }
 
@@ -147,7 +144,6 @@ public class AuthService {
 
             GoogleIdToken idToken = verifier.verify(request.getCredential());
             if (idToken == null) {
-                log.error("Google token verification failed - invalid token");
                 throw new RuntimeException("Invalid Google ID token");
             }
 
@@ -197,9 +193,6 @@ public class AuthService {
                     .build();
 
         } catch (GeneralSecurityException | IOException e) {
-            // Log error for debugging - full stack trace only in debug mode
-            log.error("Google authentication error: {} - {}", e.getClass().getSimpleName(), e.getMessage());
-            log.debug("Full exception details:", e);
             throw new RuntimeException("Google authentication failed. Please try again.");
         }
     }
@@ -253,10 +246,8 @@ public class AuthService {
         user.setPasswordHash(
                 passwordEncoder.encode(request.getNewPassword())
         );
-        // no save needed if User is managed, but save is fine
+        // Saving User
         userRepository.save(user);
-
-
 
         return ApiResponse.builder()
                 .statusCode(200)

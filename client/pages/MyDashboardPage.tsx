@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Navbar } from '../components/layout/Navbar';
 import { Sidebar } from '../components/layout/Sidebar';
@@ -48,10 +49,23 @@ export const MyDashboardPage: React.FC = () => {
                     meetingsApi.getAll()
                 ]);
 
-                // Filter tasks assigned to user
-                const myTasks = tasksData.filter(t => t.assignedTo === user?.name);
+                // Filter tasks assigned to user using ID first, name fallback
+                const myTasks = tasksData.filter(t => {
+                    if (user?.id && t.assigneeId) return t.assigneeId === user.id;
+                    return t.assignedTo === user?.name;
+                });
+                
+                // Filter meetings similarly if needed
+                const myMeetings = meetingsData.filter(m => {
+                     // For calendar visibility, we might want to see all or just mine.
+                     // Assuming dashboard shows user specific meetings primarily but could show all.
+                     // Let's filter to user's meetings for the agenda logic.
+                     if (user?.id && m.assigneeId) return m.assigneeId === user.id;
+                     return m.assignedTo === user?.name;
+                });
+
                 setAllTasks(myTasks);
-                setMeetings(meetingsData);
+                setMeetings(myMeetings); // Or keep all meetingsData if you want to see team calendar
 
             } catch (e) {
                 console.error("Failed to load dashboard data", e);

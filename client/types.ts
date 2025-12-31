@@ -73,6 +73,7 @@ export interface CRMEntry {
   email: string;
   contactName: string;
   assignedTo: string;
+  assigneeId?: number; // Linked User ID
   address?: string; 
   companyImageUrl?: string; 
   lastContact: string; 
@@ -117,6 +118,7 @@ export interface Task {
   priority: TaskPriority;
   taskType?: TaskType; 
   assignedTo: string; 
+  assigneeId?: number; // Linked User ID
   dueDate: string; 
   attachments?: string[]; 
   taskLink?: string; 
@@ -144,6 +146,7 @@ export interface Meeting {
   notes?: string;
   companyId?: number; 
   assignedTo?: string;
+  assigneeId?: number; // Linked User ID
   createdAt: string;
   lastUpdatedBy?: string;
   lastUpdatedAt?: string;
@@ -155,7 +158,6 @@ export interface MeetingFilterState {
   dateRangeStart: string;
 }
 
-// Added Invoice types to fix Module '../types' has no exported member errors
 export type InvoiceStatus = 'Draft' | 'Pending' | 'Paid' | 'Overdue';
 
 export interface InvoiceItem {
@@ -183,3 +185,14 @@ export interface Invoice {
   lastUpdatedBy?: string;
   lastUpdatedAt?: string;
 }
+
+export type CalendarItem = {
+    id: string; 
+    dateStr: string; 
+    sortTime: number; 
+    title: string;
+    type: 'task' | 'meeting';
+    data: Task | Meeting;
+    status: string;
+    priority?: string; 
+};

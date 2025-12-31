@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ChevronDown, Check, Search, User as UserIcon } from 'lucide-react';
 import { User } from '../../types';
@@ -6,8 +5,8 @@ import { createPortal } from 'react-dom';
 
 interface UserSelectProps {
   label?: string;
-  value: string;
-  onChange: (value: string) => void;
+  value: string | number; // Can be ID or Name (legacy)
+  onChange: (value: any, name?: string) => void; // Pass back both ID and Name
   users: User[];
   placeholder?: string;
   className?: string;
@@ -30,7 +29,15 @@ export const UserSelect: React.FC<UserSelectProps> = ({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const selectedUser = users.find(u => u.name === value);
+  // Determine selected user based on ID (number) or Name (string)
+  const selectedUser = useMemo(() => {
+      if (typeof value === 'number') {
+          return users.find(u => u.id === value);
+      }
+      return users.find(u => u.name === value);
+  }, [users, value]);
+
+  const displayValue = selectedUser ? selectedUser.name : (value === 'Unassigned' || !value ? 'Unassigned' : value.toString());
 
   const updateCoords = () => {
       if (triggerRef.current) {
@@ -46,7 +53,6 @@ export const UserSelect: React.FC<UserSelectProps> = ({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        // Also check if the click is inside the portal menu
         const portal = document.getElementById('user-select-portal-menu');
         if (portal && portal.contains(event.target as Node)) {
             return;
@@ -74,8 +80,8 @@ export const UserSelect: React.FC<UserSelectProps> = ({
 
   const filteredUsers = useMemo(() => {
     return users.filter(u => 
-        u.name.toLowerCase().includes(search.toLowerCase()) || 
-        u.email.toLowerCase().includes(search.toLowerCase())
+        (u.name || '').toLowerCase().includes(search.toLowerCase()) || 
+        (u.email || '').toLowerCase().includes(search.toLowerCase())
     );
   }, [users, search]);
 
@@ -109,14 +115,14 @@ export const UserSelect: React.FC<UserSelectProps> = ({
         <div className="max-h-[280px] overflow-y-auto custom-scrollbar p-2 space-y-1 bg-white">
             <button
                 type="button"
-                onClick={() => { onChange('Unassigned'); setIsOpen(false); }}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all group ${value === 'Unassigned' || !value ? 'bg-gray-50' : 'hover:bg-gray-50'}`}
+                onClick={() => { onChange('Unassigned', 'Unassigned'); setIsOpen(false); }}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all group ${displayValue === 'Unassigned' ? 'bg-gray-50' : 'hover:bg-gray-50'}`}
             >
                 <div className="h-9 w-9 rounded-full bg-gray-100 border border-dashed border-gray-300 flex items-center justify-center text-gray-400 group-hover:bg-white group-hover:border-brand-300 group-hover:text-brand-500 transition-colors">
                     <UserIcon className="h-4 w-4" />
                 </div>
                 <div className="flex flex-col items-start"><span className="text-sm font-bold text-gray-500 group-hover:text-gray-700">Unassigned</span></div>
-                {(value === 'Unassigned' || !value) && <Check className="h-4 w-4 text-gray-400 ml-auto" />}
+                {displayValue === 'Unassigned' && <Check className="h-4 w-4 text-gray-400 ml-auto" />}
             </button>
 
             <div className="h-px bg-gray-100 my-1 mx-2" />
@@ -129,17 +135,18 @@ export const UserSelect: React.FC<UserSelectProps> = ({
                         onClick={(e) => { 
                             e.preventDefault();
                             e.stopPropagation();
-                            onChange(u.name); 
+                            // Return ID as the primary value, and Name as secondary
+                            onChange(u.id, u.name); 
                             setIsOpen(false); 
                         }}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all group ${value === u.name ? 'bg-brand-50 ring-1 ring-brand-100' : 'hover:bg-gray-50'}`}
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all group ${displayValue === u.name ? 'bg-brand-50 ring-1 ring-brand-100' : 'hover:bg-gray-50'}`}
                     >
                         {renderAvatar(u, 'md')}
                         <div className="flex flex-col items-start min-w-0">
-                            <span className={`text-sm font-bold truncate ${value === u.name ? 'text-brand-900' : 'text-gray-700'}`}>{u.name}</span>
+                            <span className={`text-sm font-bold truncate ${displayValue === u.name ? 'text-brand-900' : 'text-gray-700'}`}>{u.name}</span>
                             <span className="text-[10px] text-gray-400 truncate max-w-[160px]">{u.email}</span>
                         </div>
-                        {value === u.name && <div className="ml-auto bg-brand-600 rounded-full p-0.5"><Check className="h-3 w-3 text-white" /></div>}
+                        {displayValue === u.name && <div className="ml-auto bg-brand-600 rounded-full p-0.5"><Check className="h-3 w-3 text-white" /></div>}
                     </button>
                 ))
             ) : <div className="py-8 text-center"><p className="text-xs text-gray-400 font-medium">No team members found.</p></div>}
@@ -165,15 +172,15 @@ export const UserSelect: React.FC<UserSelectProps> = ({
         className={`w-full flex items-center justify-between px-3 py-2.5 bg-white border rounded-xl text-sm transition-all duration-300 outline-none group ${isOpen ? 'border-brand-500 ring-4 ring-brand-500/10 shadow-lg' : 'border-gray-200 hover:border-brand-300 hover:shadow-md'}`}
       >
         <div className="flex items-center gap-3 truncate">
-            {value && value !== 'Unassigned' ? (
+            {selectedUser ? (
                 <>
                     {renderAvatar(selectedUser)}
-                    <span className="font-bold text-gray-900 leading-none">{value}</span>
+                    <span className="font-bold text-gray-900 leading-none">{selectedUser.name}</span>
                 </>
             ) : (
                 <span className="text-gray-400 font-medium flex items-center gap-2">
                     <div className="h-6 w-6 rounded-full bg-gray-100 flex items-center justify-center border border-dashed border-gray-300"><UserIcon className="h-3 w-3 text-gray-400" /></div>
-                    {placeholder}
+                    {displayValue !== 'Unassigned' ? displayValue : placeholder}
                 </span>
             )}
         </div>
