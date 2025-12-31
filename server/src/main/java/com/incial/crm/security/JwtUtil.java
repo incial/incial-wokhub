@@ -14,12 +14,12 @@ import java.util.function.Function;
 
 @Service
 public class JwtUtil {
-
-    private static final long EXPIRATION_TIME = 1000 * 60 * 24 * 2; // 2 days
-    private SecretKey key;
+    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24 * 2; // 2 days
 
     @Value("${jwt.secret}")
     private String secretString;
+
+    private SecretKey key;
 
     @PostConstruct
     public void init() {
@@ -27,37 +27,50 @@ public class JwtUtil {
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    //  TOKEN GENERATES USING USERNAME ONLY
-    public String generateToken(String username){
+    // Generate token WITH role
+    public String generateToken(String email, String role) {
         return Jwts.builder()
-                .subject(username)
+                .subject(email)
+                .claim("role", role)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(key)
                 .compact();
     }
 
-    // Extract username
-    public String extractUserName(String token){
-        return extractClaims(token, Claims::getSubject);
+    // ------------------ EXTRACTION ------------------
+
+    public String extractUserName(String token) {
+        return extractClaim(token, Claims::getSubject);
     }
 
-    public boolean isValidToken(String token, String username){
-        String extracted = extractUserName(token);
-        return extracted.equals(username) && !isTokenExpired(token);
+    public String extractRole(String token) {
+        return extractClaim(token, claims -> claims.get("role", String.class));
     }
 
-    private boolean isTokenExpired(String token) {
-        return extractClaims(token, Claims::getExpiration).before(new Date());
+    public Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
     }
 
-    private <T> T extractClaims(String token, Function<Claims,T> claimsResolver){
+    // ------------------ VALIDATION ------------------
+
+    public boolean isTokenValid(String token) {
+        try {
+            return !extractExpiration(token).before(new Date());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    // ------------------ INTERNAL ------------------
+
+    private <T> T extractClaim(String token, Function<Claims, T> resolver) {
         Claims claims = Jwts.parser()
                 .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
 
-        return claimsResolver.apply(claims);
+        return resolver.apply(claims);
     }
 }
