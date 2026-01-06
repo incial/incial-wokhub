@@ -1,10 +1,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Save, Calendar, AlignLeft, Flag, Link as LinkIcon, Edit2, Maximize2, Minimize2, CheckCircle, FileText, ExternalLink, Globe, Layout } from 'lucide-react';
-import { Task, TaskPriority, TaskType } from '../../types';
+import { Task, TaskPriority, TaskType, User } from '../../types';
 import { formatDate, formatDateTime } from '../../utils';
 import { CustomSelect } from '../ui/CustomSelect';
 import { CustomDatePicker } from '../ui/CustomDatePicker';
+import { UserSelect } from '../ui/UserSelect';
+import { usersApi } from '../../services/api';
 
 interface ClientTaskFormProps {
   isOpen: boolean;
@@ -22,11 +24,15 @@ export const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ isOpen, onClose,
   const [formData, setFormData] = useState<Partial<Task>>({});
   const [mode, setMode] = useState<'view' | 'edit'>('view');
   const [isNotesExpanded, setIsNotesExpanded] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
   
-  // Removed editorRef auto-resize logic
-
   useEffect(() => {
     if (isOpen) {
+      // Fetch users for assignment if internal view
+      if (!isClientView) {
+          usersApi.getAll().then(setUsers).catch(console.error);
+      }
+
       if (initialData) {
         setFormData(initialData);
         setMode(isClientView && !initialData.id ? 'edit' : 'view');
@@ -42,6 +48,7 @@ export const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ isOpen, onClose,
           priority: 'Medium',
           taskType: 'General',
           assignedTo: 'Unassigned',
+          assigneeId: undefined,
           dueDate: localIsoDate,
           taskLink: '',
           isVisibleOnMainBoard: true // Default to true so they appear on main board if created here
@@ -58,6 +65,10 @@ export const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ isOpen, onClose,
     if (!formData.title) return;
     onSubmit(formData);
     onClose();
+  };
+
+  const handleUserChange = (userId: number, userName: string) => {
+      setFormData(prev => ({ ...prev, assigneeId: userId, assignedTo: userName }));
   };
 
   const renderView = () => (
@@ -91,8 +102,8 @@ export const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ isOpen, onClose,
                     <p className="text-xl font-black text-slate-900">{formatDate(formData.dueDate || '')}</p>
                 </div>
                 <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Context</p>
-                    <p className="text-xl font-black text-indigo-600 uppercase tracking-tighter">Client Milestone</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Assignee</p>
+                    <p className="text-xl font-black text-indigo-600 uppercase tracking-tighter truncate">{formData.assignedTo || 'Unassigned'}</p>
                 </div>
               </div>
           </div>
@@ -147,7 +158,17 @@ export const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ isOpen, onClose,
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-8 bg-slate-50/50 rounded-[2.5rem] border border-slate-100 shadow-inner">
                 <CustomSelect label="Category" value={formData.taskType || 'General'} onChange={(val) => setFormData({...formData, taskType: val as TaskType})} options={TYPES.map(t => ({ label: t, value: t }))} />
                 <CustomSelect label="Mission Priority" value={formData.priority || 'Medium'} onChange={(val) => setFormData({...formData, priority: val as TaskPriority})} options={PRIORITIES.map(p => ({ label: p, value: p }))} />
-                <div className="col-span-1 md:col-span-2">
+                
+                {!isClientView && (
+                    <UserSelect 
+                        label="Designated Agent" 
+                        value={formData.assigneeId || formData.assignedTo || 'Unassigned'} 
+                        onChange={handleUserChange} 
+                        users={users} 
+                    />
+                )}
+
+                <div className={!isClientView ? "" : "col-span-1 md:col-span-2"}>
                    <CustomDatePicker label="Target Delivery" value={formData.dueDate || ''} onChange={date => setFormData({...formData, dueDate: date})} />
                 </div>
             </div>
@@ -262,4 +283,3 @@ export const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ isOpen, onClose,
     </>
   );
 };
-    
